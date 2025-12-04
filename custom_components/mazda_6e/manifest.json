@@ -1,0 +1,10 @@
+{
+  "domain": "mazda_6e",
+  "name": "Mazda 6e",
+  "codeowners": [],
+  "config_flow": true,
+  "documentation": "https://github.com/fano0001/home-assistant-mazda-6e/",
+  "issue_tracker": "https://github.com/fano0001/home-assistant-mazda-6e/issues",
+  "iot_class": "cloud_polling",
+  "version": "0.0.1"
+}
