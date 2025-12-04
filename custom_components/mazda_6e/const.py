@@ -1,4 +1,4 @@
-DOMAIN = "mazda6e"
+DOMAIN = "mazda_6e"
 
 CONF_EMAIL = "email"
 CONF_PASSWORD = "password"
