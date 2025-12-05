@@ -2,7 +2,7 @@ import aiohttp
 import logging
 import time
 
-from custom_components.mazda_6e.models import Mazda6eVehicle
+from .models import Mazda6eVehicle
 
 _LOGGER = logging.getLogger(__name__)
 
