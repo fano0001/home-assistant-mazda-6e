@@ -4,8 +4,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .coordinator import Mazda6eCoordinator
 
-DOMAIN = "mazda6e"
-
+DOMAIN = "mazda_6e"
 PLATFORMS = ["sensor"]
 
 
