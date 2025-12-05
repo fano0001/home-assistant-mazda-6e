@@ -15,6 +15,7 @@ class Mazda6eCoordinator(DataUpdateCoordinator):
             entry.data["email_enc"],
             entry.data["password_enc"],
         )
+        self.deviceid = entry.data["deviceid"]
 
         super().__init__(
             hass,
@@ -24,11 +25,11 @@ class Mazda6eCoordinator(DataUpdateCoordinator):
         )
 
     async def _async_update_data(self):
-        vehicles: list[Mazda6eVehicle] = await self.api.async_get_vehicles()
+        vehicles: list[Mazda6eVehicle] = await self.api.async_get_vehicles(self.deviceid)
         vehicle_status = {}
 
         for veh in vehicles:
-            status = await self.api.async_get_vehicle_status(veh.vehicle_id)
+            status = await self.api.async_get_vehicle_status(veh.vehicle_id, self.deviceid)
             vehicle_status[veh.vehicle_id] = {
                 "vehicle": veh,
                 "status": status,
