@@ -11,7 +11,7 @@ from .models import Mazda6eVehicle
 class Mazda6eCoordinator(DataUpdateCoordinator):
     def __init__(self, hass, entry):
         self.api = Mazda6EApi(
-            aiohttp_client.async_get_clientsession(self.hass),
+            aiohttp_client.async_get_clientsession(hass),
             entry.data["email_enc"],
             entry.data["password_enc"],
         )
