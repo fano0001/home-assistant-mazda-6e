@@ -1,14 +1,14 @@
 from datetime import timedelta
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from .api import Mazda6eApi
+from .api import Mazda6EApi
 from .const import DOMAIN, UPDATE_INTERVAL
 from .models import Mazda6eVehicle
 
 
 class Mazda6eCoordinator(DataUpdateCoordinator):
     def __init__(self, hass, entry):
-        self.api = Mazda6eApi(
+        self.api = Mazda6EApi(
             hass.helpers.aiohttp_client.async_get_clientsession(hass),
             entry.data["email_enc"],
             entry.data["password_enc"],
