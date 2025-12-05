@@ -2,9 +2,9 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
+from .const import DOMAIN
 from .coordinator import Mazda6eCoordinator
 
-DOMAIN = "mazda_6e"
 PLATFORMS = ["sensor"]
 
 
