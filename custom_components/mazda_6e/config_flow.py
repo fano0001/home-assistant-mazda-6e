@@ -20,9 +20,15 @@ STEP3_SCHEMA = vol.Schema({
 })
 
 
-class Mazda6eConfigFlow(config_entries.ConfigFlow):
+class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
-    DOMAIN = DOMAIN
+
+    def __init__(self):
+        self.device_name = None
+        self.token = None
+        self.deviceid = None
+        self.email_enc = None
+        self.api = None
 
     async def async_step_user(self, user_input=None):
         """Step 1: Email + Passwort + DeviceID """
@@ -59,7 +65,10 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow):
                 self.device_name,
                 self.deviceid
             )
-        except Exception as err:
+        except Exception as ex:
+            _LOGGER.exception(
+                "Unknown error occurred during device login request: %s", ex
+            )
             return self.async_abort(reason="device_login_failed")
 
         return await self.async_step_verify()
@@ -79,7 +88,10 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow):
                 self.device_name,
                 self.deviceid
             )
-        except Exception:
+        except Exception as ex:
+            _LOGGER.exception(
+                "Unknown error occurred during email verify request: %s", ex
+            )
             return self.async_show_form(
                 step_id="verify",
                 data_schema=STEP3_SCHEMA,
