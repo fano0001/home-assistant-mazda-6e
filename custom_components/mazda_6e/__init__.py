@@ -15,6 +15,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
         aiohttp_client.async_get_clientsession(hass),
         config_entry.data["token"],
         config_entry.data["refresh"],
+        config_entry.data["deviceid"],
     )
 
     coordinator = Mazda6eCoordinator(hass, config_entry, mazda6e_api)
