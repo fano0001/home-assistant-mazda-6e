@@ -3,6 +3,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .api import Mazda6eApi
 from .const import DOMAIN, UPDATE_INTERVAL
+from .models import Mazda6eVehicle
 
 
 class Mazda6eCoordinator(DataUpdateCoordinator):
@@ -21,4 +22,14 @@ class Mazda6eCoordinator(DataUpdateCoordinator):
         )
 
     async def _async_update_data(self):
-        return await self.api.get_vehicle_status()
+        vehicles: list[Mazda6eVehicle] = await self.api.async_get_vehicles()
+        vehicle_status = {}
+
+        for veh in vehicles:
+            status = await self.api.async_get_vehicle_status(veh.vehicle_id)
+            vehicle_status[veh.vehicle_id] = {
+                "vehicle": veh,
+                "status": status,
+            }
+
+        return vehicle_status

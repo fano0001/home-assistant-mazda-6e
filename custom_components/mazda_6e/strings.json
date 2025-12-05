@@ -1,0 +1,27 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Mazda 6e Login",
+        "description": "Bitte gib die verschlüsselten Login-Daten ein.",
+        "data": {
+          "email": "Email (verschlüsselt)",
+          "password": "Passwort (verschlüsselt)",
+          "deviceid": "Device-ID (Eindeutiger Geräte-Schlüssel)"
+        }
+      },
+      "verify": {
+        "title": "Verifizierungscode",
+        "description": "Gib den Code ein, den du per Email erhalten hast.",
+        "data": {
+          "verification_code": "Code"
+        }
+      }
+    },
+    "error": {
+      "login_failed": "Anmeldung fehlgeschlagen",
+      "device_login_failed": "Geräte-Anmeldung fehlgeschlagen",
+      "verification_failed": "Falscher Code"
+    }
+  }
+}

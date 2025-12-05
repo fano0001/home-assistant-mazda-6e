@@ -8,32 +8,22 @@ async def async_setup_entry(hass, entry, async_add_entities):
     coordinator = hass.data[DOMAIN][entry.entry_id]
 
     async_add_entities([
-        MazdaBatterySensor(coordinator),
-        MazdaRangeSensor(coordinator),
+        Mazda6eSocSensor(coordinator),
+        Mazda6eRangeSensor(coordinator),
     ])
 
 
-class MazdaBatterySensor(CoordinatorEntity, SensorEntity):
-    _attr_name = "Mazda 6e Batterie"
-    _attr_native_unit_of_measurement = "%"
-
-    def __init__(self, coordinator):
-        super().__init__(coordinator)
-        self._attr_unique_id = "mazda6e_battery"
+class Mazda6eSocSensor(CoordinatorEntity, SensorEntity):
+    _attr_icon = "mdi:battery"
 
     @property
     def native_value(self):
-        return self.coordinator.data["battery"]["level"]
+        return self.coordinator.data[self.vehicle_id]["vehicleStatus"]["soc"]
 
 
-class MazdaRangeSensor(CoordinatorEntity, SensorEntity):
-    _attr_name = "Mazda 6e Reichweite"
-    _attr_native_unit_of_measurement = "km"
-
-    def __init__(self, coordinator):
-        super().__init__(coordinator)
-        self._attr_unique_id = "mazda6e_range"
+class Mazda6eRangeSensor(CoordinatorEntity, SensorEntity):
+    _attr_icon = "mdi:map-marker-distance"
 
     @property
     def native_value(self):
-        return self.coordinator.data["battery"]["range_km"]
+        return self.coordinator.data[self.vehicle_id]["vehicleStatus"]["drvMileage"]
