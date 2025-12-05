@@ -3,6 +3,7 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.const import CONF_EMAIL, CONF_PASSWORD
+from homeassistant.helpers import aiohttp_client
 
 from .const import DOMAIN
 from .api import Mazda6EApi
@@ -35,7 +36,7 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is None:
             return self.async_show_form(step_id="user", data_schema=STEP1_SCHEMA)
 
-        self.api = Mazda6EApi(self.hass.helpers.aiohttp_client.async_get_clientsession())
+        self.api = Mazda6EApi(aiohttp_client.async_get_clientsession(self.hass))
 
         try:
             data = await self.api.login_email_password(
