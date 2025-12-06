@@ -8,7 +8,7 @@ from homeassistant.helpers import aiohttp_client
 from .const import DOMAIN
 from .api import Mazda6EApi
 
-_LOGGER = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(DOMAIN)
 
 STEP1_SCHEMA = vol.Schema({
     vol.Required(CONF_EMAIL): str,

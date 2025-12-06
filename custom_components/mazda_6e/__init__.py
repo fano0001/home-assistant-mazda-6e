@@ -1,3 +1,5 @@
+import logging
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
@@ -8,9 +10,13 @@ from .const import DOMAIN
 from .coordinator import Mazda6eCoordinator
 
 PLATFORMS = ["sensor"]
+_LOGGER = logging.getLogger(DOMAIN)
 
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
+    _LOGGER.info("Setting up Mazda 6E integration")
+    _LOGGER.info("config_entry: %s", config_entry.data)
+
     mazda6e_api = Mazda6EApi(
         aiohttp_client.async_get_clientsession(hass),
         config_entry.data["token"],

@@ -1,10 +1,11 @@
 import aiohttp
-import logging
 import time
+import logging
 
+from .const import DOMAIN
 from .models import Mazda6eVehicle
 
-_LOGGER = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(DOMAIN)
 
 BASE = "https://cma-m.iov.changanauto.com.de/cma-app-gw"
 
