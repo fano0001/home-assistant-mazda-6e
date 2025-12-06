@@ -30,7 +30,41 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self.deviceid = None
         self.email_enc = None
         self.api = None
+        self.reauth_entry = None   # <--- für Reauth
 
+
+    # ------------------------------------------------------------------
+    # STEP 0: Re-Auth starten
+    # ------------------------------------------------------------------
+    async def async_step_reauth(self, user_input=None):
+        """Startet Reauth, zeigt UI Hinweis."""
+        self.reauth_entry = self._get_reauth_entry()
+        return await self.async_step_reauth_confirm()
+
+
+    async def async_step_reauth_confirm(self, user_input=None):
+        """Reauth muss E-Mail + Passwort + DeviceID erneut abfragen."""
+        if user_input is None:
+            return self.async_show_form(
+                step_id="reauth_confirm",
+                data_schema=STEP1_SCHEMA,
+                description_placeholders={
+                    "email": self.reauth_entry.data.get("email_enc", "<unknown>")
+                }
+            )
+
+        # → danach ganz normal wie Step_user weitermachen
+        return await self.async_step_user(user_input)
+
+
+    def _get_reauth_entry(self):
+        """Hilfsfunktion für Reauth."""
+        return self.hass.config_entries.async_get_entry(self.context["entry_id"])
+
+
+    # ------------------------------------------------------------------
+    # STEP 1: Login
+    # ------------------------------------------------------------------
     async def async_step_user(self, user_input=None):
         """Step 1: Email + Passwort + DeviceID """
         if user_input is None:
@@ -52,13 +86,11 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 errors={"base": "login_failed"},
             )
 
-        # Speichern für Schritt 2+3
         self.email_enc = user_input[CONF_EMAIL]
         self.deviceid = user_input["deviceid"]
         self.token = data["token"]
         self.device_name = "Home Assistant"
 
-        # Starte Device Login
         try:
             await self.api.send_device_login(
                 self.token,
@@ -74,6 +106,10 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         return await self.async_step_verify()
 
+
+    # ------------------------------------------------------------------
+    # STEP 2: Device Code bestätigen
+    # ------------------------------------------------------------------
     async def async_step_verify(self, user_input=None):
         """Step 3: Code eingeben"""
         if user_input is None:
@@ -99,7 +135,11 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 errors={"base": "verification_failed"}
             )
 
-        # Erfolg → Integration anlegen
+        # Wird ein Reauth-Eintrag aktualisiert?
+        if self.reauth_entry:
+            return self._handle_reauth_success()
+
+        # Normale Einrichtung
         return self.async_create_entry(
             title="Mazda 6e",
             data={
@@ -109,3 +149,21 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 "deviceid": self.deviceid
             }
         )
+
+
+    # ------------------------------------------------------------------
+    # Reauth Abschluss
+    # ------------------------------------------------------------------
+    def _handle_reauth_success(self):
+        """Eintrag aktualisieren & Flow beenden."""
+        self.hass.config_entries.async_update_entry(
+            self.reauth_entry,
+            data={
+                "token": self.token,
+                "refresh": self.api.refresh,
+                "email_enc": self.email_enc,
+                "deviceid": self.deviceid
+            }
+        )
+
+        return self.async_abort(reason="reauth_successful")
