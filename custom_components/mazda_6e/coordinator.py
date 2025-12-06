@@ -1,3 +1,6 @@
+import logging
+
+
 from datetime import timedelta
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.exceptions import ConfigEntryAuthFailed
@@ -5,13 +8,14 @@ from homeassistant.exceptions import ConfigEntryAuthFailed
 from .const import DOMAIN, UPDATE_INTERVAL
 from .models import Mazda6eVehicle
 
+_LOGGER = logging.getLogger(DOMAIN)
 
 class Mazda6eCoordinator(DataUpdateCoordinator):
     def __init__(self, hass, config_entry, mazda6e_api):
         """Initialize my coordinator."""
         super().__init__(
             hass,
-            logger=__import__("logging").getLogger(DOMAIN),
+            logger=_LOGGER,
             name=DOMAIN,
             config_entry=config_entry,
             update_interval=timedelta(seconds=UPDATE_INTERVAL),
@@ -24,6 +28,9 @@ class Mazda6eCoordinator(DataUpdateCoordinator):
         # 1) Fahrzeuge abrufen
         # -------------------------
         vehicles_response = await self.api.async_get_vehicles(self.api.deviceid)
+
+        _LOGGER.debug("vehicles_response:")
+        _LOGGER.debug(vehicles_response)
 
         # Mazda gibt Fehler IMMER als success=false zurück – auch bei HTTP 200
         if isinstance(vehicles_response, dict) and (
