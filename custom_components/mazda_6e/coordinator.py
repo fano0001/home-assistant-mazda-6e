@@ -29,8 +29,8 @@ class Mazda6eCoordinator(DataUpdateCoordinator):
         # -------------------------
         vehicles_response = await self.api.async_get_vehicles(self.api.deviceid)
 
-        _LOGGER.debug("vehicles_response:")
-        _LOGGER.debug(vehicles_response)
+        _LOGGER.warning("vehicles_response:")
+        _LOGGER.warning(vehicles_response)
 
         # Mazda gibt Fehler IMMER als success=false zurück – auch bei HTTP 200
         if isinstance(vehicles_response, dict) and (
