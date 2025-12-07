@@ -10,7 +10,7 @@ from .const import DOMAIN
 from .coordinator import Mazda6eCoordinator
 
 PLATFORMS = ["sensor"]
-_LOGGER = logging.getLogger(DOMAIN)
+_LOGGER = logging.getLogger(f"custom_components.{DOMAIN}")
 
 async def trigger_reauthentication(hass: HomeAssistant, entry: ConfigEntry):
     """Start reauthentication flow."""

@@ -5,7 +5,7 @@ import logging
 from .const import DOMAIN
 from .models import Mazda6eVehicle
 
-_LOGGER = logging.getLogger(DOMAIN)
+_LOGGER = logging.getLogger(f"custom_components.{DOMAIN}")
 
 BASE = "https://cma-m.iov.changanauto.com.de/cma-app-gw"
 
@@ -174,4 +174,5 @@ class Mazda6EApi:
 
         async with self.session.post(url, headers=headers, json=body) as resp:
             data = await resp.json()
+            _LOGGER.debug("condition response: %s", data)
             return data.get("data")

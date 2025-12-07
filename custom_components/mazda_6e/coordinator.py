@@ -8,7 +8,7 @@ from homeassistant.exceptions import ConfigEntryAuthFailed
 from .const import DOMAIN, UPDATE_INTERVAL
 from .models import Mazda6eVehicle
 
-_LOGGER = logging.getLogger(DOMAIN)
+_LOGGER = logging.getLogger(f"custom_components.{DOMAIN}")
 
 class Mazda6eCoordinator(DataUpdateCoordinator):
     def __init__(self, hass, config_entry, mazda6e_api):
@@ -29,10 +29,9 @@ class Mazda6eCoordinator(DataUpdateCoordinator):
         # -------------------------
         vehicles_response = await self.api.async_get_vehicles(self.api.deviceid)
 
-        _LOGGER.warning("vehicles_response:")
-        _LOGGER.warning(vehicles_response)
+        _LOGGER.debug("vehicles_response: %s", vehicles_response)
 
-        # Mazda gibt Fehler IMMER als success=false zurück – auch bei HTTP 200
+        # Mazda gibt Fehler IMMER als success=false zurück – auch bei HTTP 200 TODO muss das nicht in den API call?
         if isinstance(vehicles_response, dict) and (
                 vehicles_response.get("success") is False
         ):
@@ -67,4 +66,5 @@ class Mazda6eCoordinator(DataUpdateCoordinator):
                 "status": status_response,
             }
 
+        _LOGGER.warning("vehicle_status: %s", vehicle_status)
         return vehicle_status
