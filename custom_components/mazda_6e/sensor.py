@@ -49,6 +49,8 @@ class Mazda6eSocSensor(Mazda6eBaseEntity):
 
     @property
     def native_value(self):
+        _LOGGER.warning("self.coordinator.data: %s", self.coordinator.data)
+        _LOGGER.warning("self.coordinator.data.get(self.vehicle_id): %s", self.coordinator.data.get(self.vehicle_id))
         data = self.coordinator.data.get(self.vehicle_id)
         if not data:
             return None
