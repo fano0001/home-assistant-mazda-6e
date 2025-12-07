@@ -1,9 +1,12 @@
+import logging
+
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.const import UnitOfEnergy, UnitOfLength
 
 from .const import DOMAIN
 
+_LOGGER = logging.getLogger(f"custom_components.{DOMAIN}")
 
 async def async_setup_entry(hass, entry, async_add_entities):
     coordinator = hass.data[DOMAIN][entry.entry_id]
@@ -13,6 +16,9 @@ async def async_setup_entry(hass, entry, async_add_entities):
     # Der Coordinator liefert ein dict: { vehicle_id: { "vehicle": Mazda6eVehicle, "status": {...} } }
     for vehicle_id, data in coordinator.data.items():
         vehicle = data["vehicle"]
+
+        _LOGGER.warning("vehicle_id: %s", vehicle_id)
+        _LOGGER.warning("vehicle: %s", vehicle)
 
         entities.append(Mazda6eSocSensor(coordinator, vehicle_id, vehicle))
         entities.append(Mazda6eRangeSensor(coordinator, vehicle_id, vehicle))
