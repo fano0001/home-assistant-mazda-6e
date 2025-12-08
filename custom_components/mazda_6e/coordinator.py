@@ -30,16 +30,6 @@ class Mazda6eCoordinator(DataUpdateCoordinator):
 
         _LOGGER.debug("vehicles_response: %s", vehicles_response)
 
-        # Mazda gibt Fehler IMMER als success=false zurück – auch bei HTTP 200 TODO muss das nicht in den API call?
-        if isinstance(vehicles_response, dict) and (
-                vehicles_response.get("success") is False
-        ):
-            if vehicles_response.get("code") == "APP_1_1_02_004":
-                # Token expired → HA Reauth
-                raise ConfigEntryAuthFailed("Mazda token expired")
-            else:
-                raise Exception(f"Mazda API error: {vehicles_response}")
-
         vehicles: list[Mazda6eVehicle] = vehicles_response
         vehicle_status = {}
 
@@ -51,19 +41,10 @@ class Mazda6eCoordinator(DataUpdateCoordinator):
                 veh.vehicle_id, self.api.deviceid
             )
 
-            if isinstance(status_response, dict) and (
-                    status_response.get("success") is False
-            ):
-                if status_response.get("code") == "APP_1_1_02_004":
-                    # Token expired → HA Reauth
-                    raise ConfigEntryAuthFailed("Mazda token expired")
-                else:
-                    raise Exception(f"Mazda API error: {status_response}")
-
             vehicle_status[veh.vehicle_id] = {
                 "vehicle": veh,
                 "status": status_response,
             }
 
-        _LOGGER.warning("vehicle_status: %s", vehicle_status)
+        _LOGGER.debug("vehicle_status: %s", vehicle_status)
         return vehicle_status

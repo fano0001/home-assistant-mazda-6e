@@ -106,14 +106,18 @@ class Mazda6EApi:
 
     async def refresh_token(self):
         """New endpoint to refresh tokens when expired."""
-        url = f"{BASE}/cma-app-auth/api/login/refresh-token"
+        url = f"{BASE}/cma-app-auth/api/auth/refresh-token"
 
         headers = {
             **HEADERS_BASE,
-            "authorization": self.refresh
+            "authorization": self.token
         }
 
-        async with self.session.post(url, headers=headers) as resp:
+        body = {
+            "refreshToken": self.refresh
+        }
+
+        async with self.session.post(url, headers=headers, json=body) as resp:
             data = await resp.json()
 
             if not data.get("success"):
@@ -131,7 +135,8 @@ class Mazda6EApi:
         }
 
         async with self.session.post(url, headers=headers, json={}) as resp:
-            data = await resp.json()
+            raw = await resp.json()
+            data = self._handle_response(raw)
 
             vehicles = []
             for v in data.get("data", []):
@@ -176,3 +181,20 @@ class Mazda6EApi:
             data = await resp.json()
             _LOGGER.debug("condition response: %s", data)
             return data.get("data")
+
+    def _handle_response(self, data: dict):
+        """Mazda API logic: HTTP 200 aber success=false."""
+        if not isinstance(data, dict):
+            return data
+
+        if data.get("success") is True:
+            return data
+
+        # Token abgelaufen
+        if data.get("code") == "APP_1_1_02_004":
+            _LOGGER.warning("Token expired, refreshing...")
+            self.refresh_token()
+            return data  # TODO caller muss neu versuchen
+
+        # Irgendein anderer Mazda-API-Fehler
+        raise Exception(f"Mazda API error: {data}")
