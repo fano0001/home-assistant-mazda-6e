@@ -120,6 +120,8 @@ class Mazda6EApi:
         async with self.session.post(url, headers=headers, json=body) as resp:
             data = await resp.json()
 
+            _LOGGER.warning("refresh-token header: %s", headers)
+            _LOGGER.warning("refresh-token body: %s", body)
             _LOGGER.warning("refresh-token response: %s", data)
 
             if not data.get("success"):
