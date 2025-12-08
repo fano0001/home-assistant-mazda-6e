@@ -182,7 +182,7 @@ class Mazda6EApi:
             _LOGGER.debug("condition response: %s", data)
             return data.get("data")
 
-    def _handle_response(self, data: dict):
+    async def _handle_response(self, data: dict):
         """Mazda API logic: HTTP 200 aber success=false."""
         if not isinstance(data, dict):
             return data
@@ -193,7 +193,7 @@ class Mazda6EApi:
         # Token abgelaufen
         if data.get("code") == "APP_1_1_02_004":
             _LOGGER.warning("Token expired, refreshing...")
-            self.refresh_token()
+            await self.refresh_token()
             return data  # TODO caller muss neu versuchen
 
         # Irgendein anderer Mazda-API-Fehler
