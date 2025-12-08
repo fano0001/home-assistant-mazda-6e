@@ -22,7 +22,6 @@ HEADERS_BASE = {
 }
 
 def now_ts():
-    """Return current UNIX timestamp as string."""
     return str(int(time.time()))
 
 
@@ -33,16 +32,44 @@ class Mazda6EApi:
         self.refresh = refresh
         self.deviceid = deviceid #TODO use this instead of passing around deviceid
 
+    # ---------------------------------------------------------------------
+    #  GENERISCHE REQUEST-METHODE MIT AUTOMATISCHEM TOKEN-REFRESH & RETRY
+    # ---------------------------------------------------------------------
+    async def _request(self, url: str, headers: dict, body: dict, retry: bool = True):
+        async with self.session.post(url, headers=headers, json=body) as resp:
+            raw = await resp.json()
+
+        # Erfolgreich
+        if raw.get("success") is True:
+            return raw
+
+        # Token abgelaufen
+        if raw.get("code") == "APP_1_1_02_004":
+            if not retry:
+                raise Exception("Token expired even after retry.")
+
+            _LOGGER.warning("Token expired -> refreshing token...")
+            await self.refresh_token()
+
+            # Token in die Header einsetzen
+            headers = {**headers, "authorization": self.token}
+
+            # Request erneut ausführen
+            return await self._request(url, headers, body, retry=False)
+
+        # Irgendein anderer API-Fehler
+        raise Exception(f"Mazda API error: {raw}")
+
+    # ---------------------------------------------------------------------
+
     async def login_email_password(self, email_enc, password_enc, deviceid):
         url = f"{BASE}/cma-app-auth/api/login/email-pass-in/v2"
-
         payload = {
             "loginTime": now_ts(),
             "email": email_enc,
             "password": password_enc,
             "pubKey": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCRYk7lZkHwHCJo8sSoKs5UuD/Jh9j7Pv5Lnoc6wNpVcvGj1LG+a6Kyn+OoRSa0NP24MWoLd0WE+zRYJH2RFNdiXHDdHqZYcxtTsvwyMaBjI6jsizdXrbFc3oBZY4LMfr7nV66/nQB1TP7UO7fYMti3/wfHfbFG0BCgCgWeuGeRXQIDAQAB"
         }
-
         headers = {**HEADERS_BASE, "deviceid": deviceid}
 
         async with self.session.post(url, json=payload, headers=headers) as resp:
@@ -53,35 +80,23 @@ class Mazda6EApi:
 
             self.token = data["data"]["token"]
             self.refresh = data["data"]["refreshToken"]
-
             return data["data"]
 
     async def send_device_login(self, token, email_enc, device_name, deviceid):
         url = f"{BASE}/cma-app-user/api/send-email/device-login/send"
-
         payload = {
             "email": email_enc,
             "deviceName": device_name,
             "loginTime": now_ts(),
             "type": "1"
         }
+        headers = {**HEADERS_BASE, "authorization": token, "deviceid": deviceid}
 
-        headers = {
-            **HEADERS_BASE,
-            "authorization": token,
-            "deviceid": deviceid,
-        }
-
-        async with self.session.post(url, json=payload, headers=headers) as resp:
-            data = await resp.json()
-            if not data.get("success"):
-                raise Exception("Device login initiation failed")
-
-            return True
+        await self._request(url, headers, payload)
+        return True
 
     async def verify_device_code(self, token, email_enc, code, device_name, deviceid):
         url = f"{BASE}/cma-app-user/api/login-device/email-verify"
-
         payload = {
             "authCode": code,
             "email": email_enc,
@@ -90,45 +105,28 @@ class Mazda6EApi:
             "type": "3",
             "deviceModel": device_name
         }
+        headers = {**HEADERS_BASE, "authorization": token, "deviceid": deviceid}
 
-        headers = {
-            **HEADERS_BASE,
-            "authorization": token,
-            "deviceid": deviceid,
-        }
-
-        async with self.session.post(url, json=payload, headers=headers) as resp:
-            data = await resp.json()
-            if not data.get("success"):
-                raise Exception("Verification code incorrect")
-
-            return True
+        await self._request(url, headers, payload)
+        return True
 
     async def refresh_token(self):
-        """New endpoint to refresh tokens when expired."""
         url = f"{BASE}/cma-app-auth/api/auth/refresh-token"
+        headers = {**HEADERS_BASE, "authorization": self.token}
 
-        headers = {
-            **HEADERS_BASE,
-            "authorization": self.token
-        }
-
-        body = {
-            "refreshToken": self.refresh
-        }
+        body = {"refreshToken": self.refresh}
 
         async with self.session.post(url, headers=headers, json=body) as resp:
-            data = await resp.json()
+            raw = await resp.json()
 
-            _LOGGER.warning("refresh-token header: %s", headers)
-            _LOGGER.warning("refresh-token body: %s", body)
-            _LOGGER.warning("refresh-token response: %s", data)
+        _LOGGER.warning("refresh-token response: %s", raw)
 
-            if not data.get("success"):
-                raise Exception("Token refresh failed")
+        if not raw.get("success"):
+            raise Exception("Token refresh failed")
 
-            self.token = data["data"]["token"]
-            return self.token
+        self.token = raw["data"]["token"]
+        self.refresh = raw["data"]["refreshToken"]
+        return self.token
 
     async def async_get_vehicles(self, deviceid) -> list[Mazda6eVehicle]:
         url = f"{BASE}/cma-app-user/api/vehicle/vehicles"
@@ -138,20 +136,18 @@ class Mazda6EApi:
             "deviceid": deviceid,
         }
 
-        async with self.session.post(url, headers=headers, json={}) as resp:
-            raw = await resp.json()
-            data = await self._handle_response(raw)
+        raw = await self._request(url, headers, {})
 
-            vehicles = []
-            for v in data.get("data", []):
-                vehicles.append(
-                    Mazda6eVehicle(
-                        vehicle_id=v["vehicleId"],
-                        vin=v["vin"],
-                        model_name=v["modelName"],
-                    )
+        vehicles = []
+        for v in raw.get("data", []):
+            vehicles.append(
+                Mazda6eVehicle(
+                    vehicle_id=v["vehicleId"],
+                    vin=v["vin"],
+                    model_name=v["modelName"],
                 )
-            return vehicles
+            )
+        return vehicles
 
     async def async_get_vehicle_status(self, vehicle_id: int, deviceid):
         url = f"{BASE}/cma-app-car-condition/api/vehicle/condition/v2"
@@ -181,24 +177,5 @@ class Mazda6EApi:
             "vehicleId": vehicle_id
         }
 
-        async with self.session.post(url, headers=headers, json=body) as resp:
-            data = await resp.json()
-            _LOGGER.debug("condition response: %s", data)
-            return data.get("data")
-
-    async def _handle_response(self, data: dict):
-        """Mazda API logic: HTTP 200 aber success=false."""
-        if not isinstance(data, dict):
-            return data
-
-        if data.get("success"):
-            return data
-
-        # Token abgelaufen
-        if data.get("code") == "APP_1_1_02_004":
-            _LOGGER.warning("Token expired, refreshing...")
-            await self.refresh_token()
-            return data  # TODO caller muss neu versuchen
-
-        # Irgendein anderer Mazda-API-Fehler
-        raise Exception(f"Mazda API error: {data}")
+        raw = await self._request(url, headers, body)
+        return raw.get("data")
