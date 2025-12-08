@@ -136,7 +136,7 @@ class Mazda6EApi:
 
         async with self.session.post(url, headers=headers, json={}) as resp:
             raw = await resp.json()
-            data = self._handle_response(raw)
+            data = await self._handle_response(raw)
 
             vehicles = []
             for v in data.get("data", []):
@@ -187,7 +187,7 @@ class Mazda6EApi:
         if not isinstance(data, dict):
             return data
 
-        if data.get("success") is True:
+        if data.get("success"):
             return data
 
         # Token abgelaufen
