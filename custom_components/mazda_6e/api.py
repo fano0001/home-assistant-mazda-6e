@@ -30,7 +30,7 @@ class Mazda6EApi:
     def __init__(self, session: aiohttp.ClientSession, token=None, refresh=None, deviceid=None):
         self.session = session
         self.token = token
-        self.refresh = refresh,
+        self.refresh = refresh
         self.deviceid = deviceid #TODO use this instead of passing around deviceid
 
     async def login_email_password(self, email_enc, password_enc, deviceid):
