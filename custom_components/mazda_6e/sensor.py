@@ -139,7 +139,7 @@ class Mazda6eSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def vehicle_data(self) -> dict | None:
-        return self.coordinator.data.get(self.vehicle_id)
+        return self.coordinator.data.get(self.vehicle.vehicle_id)
 
     @property
     def native_value(self):
