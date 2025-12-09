@@ -13,6 +13,8 @@ from homeassistant.const import UnitOfLength, PERCENTAGE
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
+
 
 from .const import DOMAIN
 from .models import Mazda6eVehicle
@@ -62,9 +64,6 @@ async def async_setup_entry(
     entities = []
 
     for vehicle_id, data in coordinator.data.items():
-        _LOGGER.warning("coordinator vehicle_id: %s", vehicle_id)
-        _LOGGER.warning("coordinator data: %s", data)
-
         vehicle: Mazda6eVehicle = data["vehicle"]
 
         for description in SENSOR_TYPES:
@@ -106,6 +105,8 @@ class Mazda6eSensor(CoordinatorEntity, SensorEntity):
         self.vehicle = vehicle
         self.vehicle_id = vehicle_id
 
+        _LOGGER.warning("Mazda6eSensor: %s", self)
+
         # Modellname fallback
         model = vehicle.model_name or "Mazda 6e"
         model_slug = model.lower().replace(" ", "_")
@@ -126,6 +127,14 @@ class Mazda6eSensor(CoordinatorEntity, SensorEntity):
         self._attr_icon = description.icon
         self._attr_native_unit_of_measurement = (
             description.native_unit_of_measurement
+        )
+
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, vehicle_id)},
+            name=vehicle.vehicle_id,
+            serial_number=vehicle.vin,
+            manufacturer="Mazda",
+            model="Mazda 6e",
         )
 
     @property
