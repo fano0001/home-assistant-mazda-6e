@@ -48,7 +48,7 @@ class Mazda6EApi:
             if not retry:
                 raise Exception("Token expired even after retry.")
 
-            _LOGGER.warning("Token expired -> refreshing token...")
+            _LOGGER.info("Token expired -> refreshing token...")
             await self.refresh_token()
 
             # Token in die Header einsetzen
@@ -119,7 +119,7 @@ class Mazda6EApi:
         async with self.session.post(url, headers=headers, json=body) as resp:
             raw = await resp.json()
 
-        _LOGGER.warning("refresh-token response: %s", raw)
+        _LOGGER.debug("refresh-token response: %s", raw)
 
         if not raw.get("success"):
             raise Exception("Token refresh failed")

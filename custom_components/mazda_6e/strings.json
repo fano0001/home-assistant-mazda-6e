@@ -1,27 +1,37 @@
 {
   "config": {
+    "error": {
+      "device_login_failed": "Geräte-Anmeldung fehlgeschlagen",
+      "login_failed": "Anmeldung fehlgeschlagen",
+      "verification_failed": "Falscher Code"
+    },
     "step": {
       "user": {
-        "title": "Mazda 6e Login",
-        "description": "Bitte gib die verschlüsselten Login-Daten ein.",
         "data": {
+          "deviceid": "Device-ID (Eindeutiger Geräte-Schlüssel)",
           "email": "Email (verschlüsselt)",
-          "password": "Passwort (verschlüsselt)",
-          "deviceid": "Device-ID (Eindeutiger Geräte-Schlüssel)"
-        }
+          "password": "Passwort (verschlüsselt)"
+        },
+        "description": "Bitte gib die verschlüsselten Login-Daten ein.",
+        "title": "Mazda 6e Login"
       },
       "verify": {
-        "title": "Verifizierungscode",
-        "description": "Gib den Code ein, den du per Email erhalten hast.",
         "data": {
           "verification_code": "Code"
-        }
+        },
+        "description": "Gib den Code ein, den du per Email erhalten hast.",
+        "title": "Verifizierungscode"
       }
-    },
-    "error": {
-      "login_failed": "Anmeldung fehlgeschlagen",
-      "device_login_failed": "Geräte-Anmeldung fehlgeschlagen",
-      "verification_failed": "Falscher Code"
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_state_of_charge": {
+        "name": "Batterieladestand in %"
+      },
+      "remaining_driving_range": {
+        "name": "Verbleibende Reichweite in km"
+      }
     }
   }
 }
