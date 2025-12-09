@@ -118,10 +118,10 @@ class Mazda6eSensor(CoordinatorEntity, SensorEntity):
         # )
 
         # unique_id: mazda6e_<models>_<id>_<sensor>
-        self._attr_unique_id = f"{vehicle_id}_{description.key}"
+        self._attr_unique_id = f"{vehicle.vehicle_id}_{description.key}"
 
         # finaler Anzeigename
-        self._attr_name = f"{description.translation_key}"
+       # self._attr_name = f"{description.translation_key}"
 
         # Icon & Einheit übernehmen
         # self._attr_icon = description.icon
