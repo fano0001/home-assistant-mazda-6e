@@ -131,7 +131,7 @@ class Mazda6eSensor(CoordinatorEntity, SensorEntity):
 
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, vehicle_id)},
-            name=vehicle.vehicle_id,
+            name=f"Mazda 6e - {vehicle.vehicle_id}",
             serial_number=vehicle.vin,
             manufacturer="Mazda",
             model="Mazda 6e",
