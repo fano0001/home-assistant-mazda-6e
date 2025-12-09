@@ -66,10 +66,9 @@ async def async_setup_entry(
 
         for description in SENSOR_TYPES:
             try:
-                # prüfen, ob Value existiert
                 description.value_fn(data)
             except Exception:
-                continue  # Sensor nicht verfügbar → nicht erstellen
+                continue
 
             entities.append(
                 Mazda6eSensor(
@@ -104,13 +103,21 @@ class Mazda6eSensor(CoordinatorEntity, SensorEntity):
         self.vehicle = vehicle
         self.vehicle_id = vehicle_id
 
-        model_slug = vehicle.model_name.lower().replace(" ", "_")
+        # Modellname fallback
+        model = vehicle.model_name or "Mazda 6e"
+        model_slug = model.lower().replace(" ", "_")
 
-        # unique ID: mazda6e_<model>_<vin>_<sensortyp>
+        human_name = (
+            description.translation_key.replace("_", " ").capitalize()
+            if description.translation_key
+            else description.key.replace("_", " ").capitalize()
+        )
+
+        # unique_id: mazda6e_<models>_<id>_<sensor>
         self._attr_unique_id = f"mazda6e_{model_slug}_{vehicle_id}_{description.key}"
 
-        # Anzeigename
-        self._attr_name = f"{vehicle.model_name} {description.name}"
+        # finaler Anzeigename
+        self._attr_name = f"{model} {human_name}"
 
         # Icon & Einheit übernehmen
         self._attr_icon = description.icon
@@ -118,12 +125,10 @@ class Mazda6eSensor(CoordinatorEntity, SensorEntity):
             description.native_unit_of_measurement
         )
 
-    # Zugriff auf eigene Fahrzeugdaten
     @property
     def vehicle_data(self) -> dict | None:
         return self.coordinator.data.get(self.vehicle_id)
 
-    # Sensorwert
     @property
     def native_value(self):
         data = self.vehicle_data
