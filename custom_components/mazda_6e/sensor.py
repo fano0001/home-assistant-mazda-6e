@@ -76,7 +76,7 @@ async def async_setup_entry(
                 Mazda6eSensor(
                     coordinator=coordinator,
                     vehicle=vehicle,
-                    vehicle_id=vehicle_id,
+                    vehicle_id=f"{vehicle.vehicle_id}",
                     description=description,
                 )
             )
