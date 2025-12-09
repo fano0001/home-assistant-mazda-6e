@@ -109,32 +109,32 @@ class Mazda6eSensor(CoordinatorEntity, SensorEntity):
 
         # Modellname fallback
         model = vehicle.model_name or "Mazda 6e"
-        model_slug = model.lower().replace(" ", "_")
+        # model_slug = model.lower().replace(" ", "_")
 
-        human_name = (
-            description.translation_key.replace("_", " ").capitalize()
-            if description.translation_key
-            else description.key.replace("_", " ").capitalize()
-        )
+        # human_name = (
+        #     description.translation_key.replace("_", " ").capitalize()
+        #     if description.translation_key
+        #     else description.key.replace("_", " ").capitalize()
+        # )
 
         # unique_id: mazda6e_<models>_<id>_<sensor>
-        self._attr_unique_id = f"mazda6e_{model_slug}_{vehicle_id}_{description.key}"
+        self._attr_unique_id = f"mazda6e_{vehicle_id}_{description.key}"
 
         # finaler Anzeigename
-        self._attr_name = f"{model} {human_name}"
+        # self._attr_name = f"{model} {human_name}"
 
         # Icon & Einheit übernehmen
-        self._attr_icon = description.icon
-        self._attr_native_unit_of_measurement = (
-            description.native_unit_of_measurement
-        )
+        # self._attr_icon = description.icon
+        # self._attr_native_unit_of_measurement = (
+        #     description.native_unit_of_measurement
+        # )
 
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, vehicle_id)},
             name=f"Mazda 6e - {vehicle.vehicle_id}",
             serial_number=vehicle.vin,
             manufacturer="Mazda",
-            model="Mazda 6e",
+            model="6e",
         )
 
     @property
