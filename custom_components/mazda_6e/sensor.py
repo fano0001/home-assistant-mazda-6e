@@ -34,14 +34,14 @@ class Mazda6eSensorDescription(SensorEntityDescription):
 
 SENSOR_TYPES: tuple[Mazda6eSensorDescription, ...] = (
     Mazda6eSensorDescription(
-        key="soc",
+        key="battery_state_of_charge",
         translation_key="battery_state_of_charge",
         icon="mdi:battery",
         native_unit_of_measurement=PERCENTAGE,
         value_fn=lambda data: data["status"]["vehicleStatus"]["soc"],
     ),
     Mazda6eSensorDescription(
-        key="range",
+        key="remaining_driving_range",
         translation_key="remaining_driving_range",
         icon="mdi:map-marker-distance",
         native_unit_of_measurement=UnitOfLength.KILOMETERS,
