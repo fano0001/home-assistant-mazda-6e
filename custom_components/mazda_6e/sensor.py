@@ -105,7 +105,7 @@ class Mazda6eSensor(CoordinatorEntity, SensorEntity):
         self.vehicle = vehicle
         self.vehicle_id = vehicle_id
 
-        _LOGGER.warning("Mazda6eSensor: '%s', '%s'", self.entity_description, self.vehicle)
+        _LOGGER.debug("Mazda6eSensor: '%s', '%s'", self.entity_description, self.vehicle)
 
         # Modellname fallback
         model = vehicle.model_name or "Mazda 6e"
