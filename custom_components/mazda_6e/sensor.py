@@ -31,17 +31,24 @@ class Mazda6eBaseEntity(CoordinatorEntity, SensorEntity):
         self.vehicle_id = vehicle_id
         self.vehicle = vehicle
 
-        # 🔥 Einheitliche Basis für IDs
-        model_slug = self.vehicle.model_name.lower().replace(" ", "_")  # "mazda_6e"
-        entity_type = self.__class__.__name__.replace("Mazda6e", "").replace("Sensor", "").lower()
+        model_slug = self.vehicle.model_name.lower().replace(" ", "_")
+        entity_type = (
+            self.__class__.__name__
+            .replace("Mazda6e", "")
+            .replace("Sensor", "")
+            .lower()
+        )
 
-        # 🔥 Unique ID (wichtig für HA)
-        # sensor.<domain>_<model>_<vehicleid>_<type>
+        # 🔥 Eindeutige ID: mazda_6e_<vehicleid>_<typ>
         self._attr_unique_id = f"{model_slug}_{vehicle_id}_{entity_type}"
 
-        # 🔥 Benutzerfreundlicher Name
-        # z.B.: "Mazda 6e Batterie"
-        human_name = entity_type.capitalize().replace("soc", "Batterie").replace("range", "Reichweite")
+        # 🔥 Name
+        human_name = (
+            entity_type.capitalize()
+            .replace("soc", "Batterie")
+            .replace("range", "Reichweite")
+        )
+
         self._attr_name = f"{self.vehicle.model_name} {human_name}"
 
     @property
