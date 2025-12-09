@@ -62,6 +62,9 @@ async def async_setup_entry(
     entities = []
 
     for vehicle_id, data in coordinator.data.items():
+        _LOGGER.warning("coordinator vehicle_id: %s", vehicle_id)
+        _LOGGER.warning("coordinator data: %s", data)
+
         vehicle: Mazda6eVehicle = data["vehicle"]
 
         for description in SENSOR_TYPES:
