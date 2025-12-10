@@ -71,7 +71,7 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is None:
             return self.async_show_form(step_id="user", data_schema=STEP1_SCHEMA)
 
-        self.api = Mazda6EApi(aiohttp_client.async_get_clientsession(self.hass))
+        self.api = Mazda6EApi(aiohttp_client.async_get_clientsession(self.hass), None, None, user_input["deviceid"])
 
         try:
             data = await self.api.login_email_password(
