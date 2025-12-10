@@ -7,6 +7,8 @@ from typing import Callable, Any
 from homeassistant.components.sensor import (
     SensorEntity,
     SensorEntityDescription,
+    SensorDeviceClass,
+    SensorStateClass
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfLength, PERCENTAGE
@@ -38,13 +40,17 @@ SENSOR_TYPES: tuple[Mazda6eSensorDescription, ...] = (
         translation_key="battery_state_of_charge",
         icon="mdi:battery",
         native_unit_of_measurement=PERCENTAGE,
+        device_class=SensorDeviceClass.BATTERY,
+        state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda data: data["status"]["vehicleStatus"]["soc"],
     ),
     Mazda6eSensorDescription(
         key="remaining_driving_range",
         translation_key="remaining_driving_range",
-        icon="mdi:map-marker-distance",
+        icon="mdi:ev-station",
         native_unit_of_measurement=UnitOfLength.KILOMETERS,
+        device_class=SensorDeviceClass.DISTANCE,
+        state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda data: data["status"]["vehicleStatus"]["drvMileage"],
     ),
 )
@@ -109,7 +115,6 @@ class Mazda6eSensor(CoordinatorEntity, SensorEntity):
         _LOGGER.debug("Mazda6eSensor: '%s', '%s'", self.entity_description, self.vehicle)
 
         self._attr_unique_id = f"{vehicle.vehicle_id}_{description.key}"
-        self._attr_name = f"{vehicle.vehicle_id} {description.translation_key}"
 
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, vehicle_id)},
