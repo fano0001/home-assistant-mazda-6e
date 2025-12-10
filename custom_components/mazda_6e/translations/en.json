@@ -1,0 +1,37 @@
+{
+  "config": {
+    "error": {
+      "device_login_failed": "Device login failed",
+      "login_failed": "Login failed",
+      "verification_failed": "Bad verification code"
+    },
+    "step": {
+      "user": {
+        "data": {
+          "deviceid": "Device-ID (unique device key)",
+          "email": "Email (encrypted)",
+          "password": "Passwort (encrypted)"
+        },
+        "description": "Please enter the encrypted login details.",
+        "title": "Mazda 6e Login"
+      },
+      "verify": {
+        "data": {
+          "verification_code": "verification code"
+        },
+        "description": "Enter the code you received by email.",
+        "title": "Verification Code"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_state_of_charge": {
+        "name": "Charge level"
+      },
+      "remaining_driving_range": {
+        "name": "Remaining range"
+      }
+    }
+  }
+}
