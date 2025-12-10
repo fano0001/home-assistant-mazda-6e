@@ -25,6 +25,11 @@
     }
   },
   "entity": {
+    "binary_sensor": {
+      "front_left_door": {
+        "name": "Driver door"
+      }
+    },
     "sensor": {
       "battery_state_of_charge": {
         "name": "Charge level"
@@ -46,6 +51,9 @@
       },
       "rear_right_tire_pressure": {
         "name": "Rear right tire pressure"
+      },
+      "battery_max_soc_percent": {
+        "name": "Battery health"
       }
     }
   }

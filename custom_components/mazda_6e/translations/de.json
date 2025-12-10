@@ -25,6 +25,11 @@
     }
   },
   "entity": {
+    "binary_sensor": {
+      "front_left_door": {
+        "name": "Fahrertür"
+      }
+    },
     "sensor": {
       "battery_state_of_charge": {
         "name": "Batterieladestand"
@@ -46,6 +51,9 @@
       },
       "rear_right_tire_pressure": {
         "name": "Reifendruck hinten rechts"
+      },
+      "battery_max_soc_percent": {
+        "name": "Batteriekapazität"
       }
     }
   }
