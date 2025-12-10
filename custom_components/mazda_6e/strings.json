@@ -31,6 +31,21 @@
       },
       "remaining_driving_range": {
         "name": "Remaining range"
+      },
+      "odometer": {
+        "name": "Odometer"
+      },
+      "front_left_tire_pressure": {
+        "name": "Front left tire pressure"
+      },
+      "front_right_tire_pressure": {
+        "name": "Front right tire pressure"
+      },
+      "rear_left_tire_pressure": {
+        "name": "Rear left tire pressure"
+      },
+      "rear_right_tire_pressure": {
+        "name": "Rear right tire pressure"
       }
     }
   }

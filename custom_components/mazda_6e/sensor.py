@@ -11,7 +11,7 @@ from homeassistant.components.sensor import (
     SensorStateClass
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import UnitOfLength, PERCENTAGE
+from homeassistant.const import UnitOfLength, PERCENTAGE, UnitOfPressure
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -51,6 +51,51 @@ SENSOR_TYPES: tuple[Mazda6eSensorDescription, ...] = (
         device_class=SensorDeviceClass.DISTANCE,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda data: data["status"]["vehicleStatus"]["drvMileage"],
+    ),
+    Mazda6eSensorDescription(
+        key="odometer",
+        translation_key="odometer",
+        icon="mdi:speedometer",
+        native_unit_of_measurement=UnitOfLength.KILOMETERS,
+        device_class=SensorDeviceClass.DISTANCE,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        value_fn=lambda data: data["status"]["vehicleStatus"]["totalMileage"],
+    ),
+    Mazda6eSensorDescription(
+        key="front_left_tire_pressure",
+        translation_key="front_left_tire_pressure",
+        icon="mdi:car-tire-alert",
+        native_unit_of_measurement=UnitOfPressure.PSI,
+        device_class=SensorDeviceClass.PRESSURE,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: data["status"]["tire"]["leftFront"]["pressure"],
+    ),
+    Mazda6eSensorDescription(
+        key="front_right_tire_pressure",
+        translation_key="front_right_tire_pressure",
+        icon="mdi:car-tire-alert",
+        native_unit_of_measurement=UnitOfPressure.PSI,
+        device_class=SensorDeviceClass.PRESSURE,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: data["status"]["tire"]["rightFront"]["pressure"],
+    ),
+    Mazda6eSensorDescription(
+        key="rear_left_tire_pressure",
+        translation_key="rear_left_tire_pressure",
+        icon="mdi:car-tire-alert",
+        native_unit_of_measurement=UnitOfPressure.PSI,
+        device_class=SensorDeviceClass.PRESSURE,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: data["status"]["tire"]["leftBack"]["pressure"],
+    ),
+    Mazda6eSensorDescription(
+        key="rear_right_tire_pressure",
+        translation_key="rear_right_tire_pressure",
+        icon="mdi:car-tire-alert",
+        native_unit_of_measurement=UnitOfPressure.PSI,
+        device_class=SensorDeviceClass.PRESSURE,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: data["status"]["tire"]["rightBack"]["pressure"],
     ),
 )
 
