@@ -119,16 +119,9 @@ class Mazda6eSensor(CoordinatorEntity, SensorEntity):
         # )
 
         # unique_id: mazda6e_<models>_<id>_<sensor>
+        _LOGGER.warning("_attr_unique_id pre: '%s'", f"{vehicle.vehicle_id}_{description.key}")
         self._attr_unique_id = f"{vehicle.vehicle_id}_{description.key}"
-
-        # finaler Anzeigename
-       # self._attr_name = f"{description.translation_key}"
-
-        # Icon & Einheit übernehmen
-        # self._attr_icon = description.icon
-        # self._attr_native_unit_of_measurement = (
-        #     description.native_unit_of_measurement
-        # )
+        _LOGGER.warning("_attr_unique_id post: '%s'", self._attr_unique_id)
 
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, vehicle_id)},
