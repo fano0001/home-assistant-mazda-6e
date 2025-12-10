@@ -28,6 +28,33 @@
     "binary_sensor": {
       "front_left_door": {
         "name": "Fahrertür"
+      },
+      "front_left_window": {
+        "name": "Fahrerfenster"
+      },
+      "front_right_door": {
+        "name": "Beifahrertür"
+      },
+      "front_right_window": {
+        "name": "Beifahrerfenster"
+      },
+      "rear_left_door": {
+        "name": "Linke Hintertür"
+      },
+      "rear_left_window": {
+        "name": "Fenster hinten links"
+      },
+      "rear_right_door": {
+        "name": "Rechte Hintertür"
+      },
+      "rear_right_window": {
+        "name": "Fenster hinten rechts"
+      },
+      "sunroof": {
+        "name": "Sonnendach"
+      },
+      "trunk": {
+        "name": "Kofferraum"
       }
     },
     "sensor": {

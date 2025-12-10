@@ -28,6 +28,33 @@
     "binary_sensor": {
       "front_left_door": {
         "name": "Driver door"
+      },
+      "front_left_window": {
+        "name": "Driver window"
+      },
+      "front_right_door": {
+        "name": "Passenger door"
+      },
+      "front_right_window": {
+        "name": "Passenger window"
+      },
+      "rear_left_door": {
+        "name": "Rear left door"
+      },
+      "rear_left_window": {
+        "name": "Rear left window"
+      },
+      "rear_right_door": {
+        "name": "Rear right door"
+      },
+      "rear_right_window": {
+        "name": "Rear right window"
+      },
+      "sunroof": {
+        "name": "Sunroof"
+      },
+      "trunk": {
+        "name": "Trunk"
       }
     },
     "sensor": {

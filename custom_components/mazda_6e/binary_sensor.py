@@ -39,7 +39,69 @@ SENSOR_TYPES: tuple[Mazda6eBinarySensorDescription, ...] = (
         device_class=BinarySensorDeviceClass.DOOR,
         value_fn=lambda data: data["status"]["door"]["doors"][0],
     ),
-
+    Mazda6eBinarySensorDescription(
+        key="front_right_door",
+        translation_key="front_right_door",
+        icon="mdi:car-door",
+        device_class=BinarySensorDeviceClass.DOOR,
+        value_fn=lambda data: data["status"]["door"]["doors"][1],
+    ),
+    Mazda6eBinarySensorDescription(
+        key="rear_left_door",
+        translation_key="rear_left_door",
+        icon="mdi:car-door",
+        device_class=BinarySensorDeviceClass.DOOR,
+        value_fn=lambda data: data["status"]["door"]["doors"][2],
+    ),
+    Mazda6eBinarySensorDescription(
+        key="rear_right_door",
+        translation_key="rear_right_door",
+        icon="mdi:car-door",
+        device_class=BinarySensorDeviceClass.DOOR,
+        value_fn=lambda data: data["status"]["door"]["doors"][3],
+    ),
+    Mazda6eBinarySensorDescription(
+        key="trunk",
+        translation_key="trunk",
+        icon="mdi:car-back",
+        device_class=BinarySensorDeviceClass.DOOR,
+        value_fn=lambda data: data["status"]["door"]["trunk"],
+    ),
+    Mazda6eBinarySensorDescription(
+        key="front_left_window",
+        translation_key="front_left_window",
+        icon="mdi:window-closed-variant",
+        device_class=BinarySensorDeviceClass.WINDOW,
+        value_fn=lambda data: data["status"]["window"]["windows"][0],
+    ),
+    Mazda6eBinarySensorDescription(
+        key="front_right_window",
+        translation_key="front_right_window",
+        icon="mdi:window-closed-variant",
+        device_class=BinarySensorDeviceClass.WINDOW,
+        value_fn=lambda data: data["status"]["window"]["windows"][1],
+    ),
+    Mazda6eBinarySensorDescription(
+        key="rear_left_window",
+        translation_key="rear_left_window",
+        icon="mdi:window-closed-variant",
+        device_class=BinarySensorDeviceClass.WINDOW,
+        value_fn=lambda data: data["status"]["window"]["windows"][2],
+    ),
+    Mazda6eBinarySensorDescription(
+        key="rear_right_window",
+        translation_key="rear_right_window",
+        icon="mdi:window-closed-variant",
+        device_class=BinarySensorDeviceClass.WINDOW,
+        value_fn=lambda data: data["status"]["window"]["windows"][3],
+    ),
+    Mazda6eBinarySensorDescription(
+        key="sunroof",
+        translation_key="sunroof",
+        icon="mdi:blinds-vertical",
+        device_class=BinarySensorDeviceClass.WINDOW,
+        value_fn=lambda data: data["status"]["window"]["sunroof"],
+    ),
 )
 
 
