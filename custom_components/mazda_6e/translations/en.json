@@ -31,14 +31,11 @@
       }
     },
     "sensor": {
+      "battery_max_soc_percent": {
+        "name": "Battery health"
+      },
       "battery_state_of_charge": {
         "name": "Charge level"
-      },
-      "remaining_driving_range": {
-        "name": "Remaining range"
-      },
-      "odometer": {
-        "name": "Odometer"
       },
       "front_left_tire_pressure": {
         "name": "Front left tire pressure"
@@ -46,14 +43,17 @@
       "front_right_tire_pressure": {
         "name": "Front right tire pressure"
       },
+      "odometer": {
+        "name": "Odometer"
+      },
       "rear_left_tire_pressure": {
         "name": "Rear left tire pressure"
       },
       "rear_right_tire_pressure": {
         "name": "Rear right tire pressure"
       },
-      "battery_max_soc_percent": {
-        "name": "Battery health"
+      "remaining_driving_range": {
+        "name": "Remaining range"
       }
     }
   }

@@ -31,14 +31,11 @@
       }
     },
     "sensor": {
+      "battery_max_soc_percent": {
+        "name": "Batteriekapazität"
+      },
       "battery_state_of_charge": {
         "name": "Batterieladestand"
-      },
-      "remaining_driving_range": {
-        "name": "Verbleibende Reichweite"
-      },
-      "odometer": {
-        "name": "Kilometerstand"
       },
       "front_left_tire_pressure": {
         "name": "Reifendruck vorne links"
@@ -46,14 +43,17 @@
       "front_right_tire_pressure": {
         "name": "Reifendruck vorne rechts"
       },
+      "odometer": {
+        "name": "Kilometerstand"
+      },
       "rear_left_tire_pressure": {
         "name": "Reifendruck hinten links"
       },
       "rear_right_tire_pressure": {
         "name": "Reifendruck hinten rechts"
       },
-      "battery_max_soc_percent": {
-        "name": "Batteriekapazität"
+      "remaining_driving_range": {
+        "name": "Verbleibende Reichweite"
       }
     }
   }

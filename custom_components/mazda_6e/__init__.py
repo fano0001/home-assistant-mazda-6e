@@ -4,12 +4,18 @@ from homeassistant.config_entries import ConfigEntry, SOURCE_REAUTH
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.helpers import aiohttp_client
+from homeassistant.const import Platform
+
 
 from .api import Mazda6EApi
 from .const import DOMAIN
 from .coordinator import Mazda6eCoordinator
 
-PLATFORMS = ["sensor"]
+PLATFORMS = [
+    Platform.BINARY_SENSOR,
+    Platform.SENSOR,
+]
+
 _LOGGER = logging.getLogger(__name__)
 
 async def trigger_reauthentication(hass: HomeAssistant, entry: ConfigEntry):
