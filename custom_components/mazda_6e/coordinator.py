@@ -7,7 +7,7 @@ from homeassistant.exceptions import ConfigEntryAuthFailed
 from .const import DOMAIN, UPDATE_INTERVAL
 from .models import Mazda6eVehicle
 
-_LOGGER = logging.getLogger(f"custom_components.{DOMAIN}")
+_LOGGER = logging.getLogger(__name__)
 
 class Mazda6eCoordinator(DataUpdateCoordinator):
     def __init__(self, hass, config_entry, mazda6e_api):
@@ -26,7 +26,7 @@ class Mazda6eCoordinator(DataUpdateCoordinator):
         # -------------------------
         # 1) Fahrzeuge abrufen
         # -------------------------
-        vehicles_response = await self.api.async_get_vehicles(self.api.deviceid)
+        vehicles_response = await self.api.async_get_vehicles()
 
         _LOGGER.debug("vehicles_response: %s", vehicles_response)
 
@@ -37,9 +37,7 @@ class Mazda6eCoordinator(DataUpdateCoordinator):
         # 2) Status pro Fahrzeug
         # -------------------------
         for veh in vehicles:
-            status_response = await self.api.async_get_vehicle_status(
-                veh.vehicle_id, self.api.deviceid
-            )
+            status_response = await self.api.async_get_vehicle_status(veh.vehicle_id)
 
             vehicle_status[veh.vehicle_id] = {
                 "vehicle": veh,

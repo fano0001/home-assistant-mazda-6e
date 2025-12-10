@@ -1,4 +1,6 @@
 import logging
+import uuid
+
 import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.core import callback
@@ -8,13 +10,12 @@ from homeassistant.helpers import aiohttp_client
 from .const import DOMAIN
 from .api import Mazda6EApi
 
-_LOGGER = logging.getLogger(f"custom_components.{DOMAIN}")
+_LOGGER = logging.getLogger(__name__)
 
 STEP1_SCHEMA = vol.Schema({
     vol.Required(CONF_EMAIL): str,
     vol.Required(CONF_PASSWORD): str,
-    vol.Required("deviceid"): str
-})
+    vol.Required("deviceid", default=str(uuid.uuid4())): str})
 
 STEP3_SCHEMA = vol.Schema({
     vol.Required("verification_code"): str
@@ -75,8 +76,7 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         try:
             data = await self.api.login_email_password(
                 user_input[CONF_EMAIL],
-                user_input[CONF_PASSWORD],
-                user_input["deviceid"]
+                user_input[CONF_PASSWORD]
             )
         except Exception as err:
             _LOGGER.error("Login failed: %s", err)
@@ -95,8 +95,7 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             await self.api.send_device_login(
                 self.token,
                 self.email_enc,
-                self.device_name,
-                self.deviceid
+                self.device_name
             )
         except Exception as ex:
             _LOGGER.exception(
@@ -118,12 +117,11 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         code = user_input["verification_code"]
 
         try:
-            ok = await self.api.verify_device_code(
+            await self.api.verify_device_code(
                 self.token,
                 self.email_enc,
                 code,
-                self.device_name,
-                self.deviceid
+                self.device_name
             )
         except Exception as ex:
             _LOGGER.exception(

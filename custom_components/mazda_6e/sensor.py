@@ -21,8 +21,7 @@ from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from .const import DOMAIN
 from .models import Mazda6eVehicle
 
-_LOGGER = logging.getLogger(f"custom_components.{DOMAIN}")
-
+_LOGGER = logging.getLogger(__name__)
 
 # ================================================================
 #  SENSOR DESCRIPTIONS

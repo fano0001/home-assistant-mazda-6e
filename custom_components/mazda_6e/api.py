@@ -2,10 +2,10 @@ import aiohttp
 import time
 import logging
 
-from .const import DOMAIN
+from .const import PUB_KEY
 from .models import Mazda6eVehicle
 
-_LOGGER = logging.getLogger(f"custom_components.{DOMAIN}")
+_LOGGER = logging.getLogger(__name__)
 
 BASE = "https://cma-m.iov.changanauto.com.de/cma-app-gw"
 
@@ -30,7 +30,7 @@ class Mazda6EApi:
         self.session = session
         self.token = token
         self.refresh = refresh
-        self.deviceid = deviceid #TODO use this instead of passing around deviceid
+        self.deviceid = deviceid
 
     # ---------------------------------------------------------------------
     #  GENERISCHE REQUEST-METHODE MIT AUTOMATISCHEM TOKEN-REFRESH & RETRY
@@ -62,15 +62,15 @@ class Mazda6EApi:
 
     # ---------------------------------------------------------------------
 
-    async def login_email_password(self, email_enc, password_enc, deviceid):
+    async def login_email_password(self, email_enc, password_enc):
         url = f"{BASE}/cma-app-auth/api/login/email-pass-in/v2"
         payload = {
             "loginTime": now_ts(),
             "email": email_enc,
             "password": password_enc,
-            "pubKey": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCRYk7lZkHwHCJo8sSoKs5UuD/Jh9j7Pv5Lnoc6wNpVcvGj1LG+a6Kyn+OoRSa0NP24MWoLd0WE+zRYJH2RFNdiXHDdHqZYcxtTsvwyMaBjI6jsizdXrbFc3oBZY4LMfr7nV66/nQB1TP7UO7fYMti3/wfHfbFG0BCgCgWeuGeRXQIDAQAB"
+            "pubKey": PUB_KEY
         }
-        headers = {**HEADERS_BASE, "deviceid": deviceid}
+        headers = {**HEADERS_BASE, "deviceid": self.deviceid}
 
         async with self.session.post(url, json=payload, headers=headers) as resp:
             data = await resp.json()
@@ -82,7 +82,7 @@ class Mazda6EApi:
             self.refresh = data["data"]["refreshToken"]
             return data["data"]
 
-    async def send_device_login(self, token, email_enc, device_name, deviceid):
+    async def send_device_login(self, token, email_enc, device_name):
         url = f"{BASE}/cma-app-user/api/send-email/device-login/send"
         payload = {
             "email": email_enc,
@@ -90,12 +90,12 @@ class Mazda6EApi:
             "loginTime": now_ts(),
             "type": "1"
         }
-        headers = {**HEADERS_BASE, "authorization": token, "deviceid": deviceid}
+        headers = {**HEADERS_BASE, "authorization": token, "deviceid": self.deviceid}
 
         await self._request(url, headers, payload)
         return True
 
-    async def verify_device_code(self, token, email_enc, code, device_name, deviceid):
+    async def verify_device_code(self, token, email_enc, code, device_name):
         url = f"{BASE}/cma-app-user/api/login-device/email-verify"
         payload = {
             "authCode": code,
@@ -105,7 +105,7 @@ class Mazda6EApi:
             "type": "3",
             "deviceModel": device_name
         }
-        headers = {**HEADERS_BASE, "authorization": token, "deviceid": deviceid}
+        headers = {**HEADERS_BASE, "authorization": token, "deviceid": self.deviceid}
 
         await self._request(url, headers, payload)
         return True
@@ -128,12 +128,12 @@ class Mazda6EApi:
         self.refresh = raw["data"]["refreshToken"]
         return self.token
 
-    async def async_get_vehicles(self, deviceid) -> list[Mazda6eVehicle]:
+    async def async_get_vehicles(self) -> list[Mazda6eVehicle]:
         url = f"{BASE}/cma-app-user/api/vehicle/vehicles"
         headers = {
             **HEADERS_BASE,
             "authorization": self.token,
-            "deviceid": deviceid,
+            "deviceid": self.deviceid,
         }
 
         raw = await self._request(url, headers, {})
@@ -149,12 +149,12 @@ class Mazda6EApi:
             )
         return vehicles
 
-    async def async_get_vehicle_status(self, vehicle_id: int, deviceid):
+    async def async_get_vehicle_status(self, vehicle_id: int):
         url = f"{BASE}/cma-app-car-condition/api/vehicle/condition/v2"
         headers = {
             **HEADERS_BASE,
             "authorization": self.token,
-            "deviceid": deviceid,
+            "deviceid": self.deviceid,
         }
 
         body = {

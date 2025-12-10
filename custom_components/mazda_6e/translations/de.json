@@ -27,10 +27,10 @@
   "entity": {
     "sensor": {
       "battery_state_of_charge": {
-        "name": "Charge level"
+        "name": "Batterieladestand"
       },
       "remaining_driving_range": {
-        "name": "Remaining range"
+        "name": "Verbleibende Reichweite"
       }
     }
   }
