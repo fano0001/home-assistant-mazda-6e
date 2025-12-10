@@ -108,20 +108,8 @@ class Mazda6eSensor(CoordinatorEntity, SensorEntity):
 
         _LOGGER.debug("Mazda6eSensor: '%s', '%s'", self.entity_description, self.vehicle)
 
-        # Modellname fallback
-        # model = vehicle.model_name or "Mazda 6e"
-        # model_slug = model.lower().replace(" ", "_")
-
-        # human_name = (
-        #     description.translation_key.replace("_", " ").capitalize()
-        #     if description.translation_key
-        #     else description.key.replace("_", " ").capitalize()
-        # )
-
-        # unique_id: mazda6e_<models>_<id>_<sensor>
-        _LOGGER.warning("_attr_unique_id pre: '%s'", f"{vehicle.vehicle_id}_{description.key}")
         self._attr_unique_id = f"{vehicle.vehicle_id}_{description.key}"
-        _LOGGER.warning("_attr_unique_id post: '%s'", self._attr_unique_id)
+        self._attr_name = f"{vehicle.vehicle_id} {description.translation_key}"
 
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, vehicle_id)},
