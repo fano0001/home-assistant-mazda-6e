@@ -1,0 +1,12 @@
+{
+  "entity": {
+    "sensor": {
+      "battery_state_of_charge": {
+        "name": "Batterieladestand in %"
+      },
+      "remaining_driving_range": {
+        "name": "Verbleibende Reichweite in km"
+      }
+    }
+  }
+}

@@ -91,6 +91,7 @@ async def async_setup_entry(
 class Mazda6eSensor(CoordinatorEntity, SensorEntity):
     """Ein generischer Mazda 6e Sensor."""
 
+    _attr_has_entity_name = True
     entity_description: Mazda6eSensorDescription
 
     def __init__(
