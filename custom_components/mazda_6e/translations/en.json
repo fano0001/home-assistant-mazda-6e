@@ -58,9 +58,6 @@
       }
     },
     "sensor": {
-      "battery_max_soc_percent": {
-        "name": "Battery health"
-      },
       "battery_state_of_charge": {
         "name": "Charge level"
       },

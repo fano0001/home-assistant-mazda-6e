@@ -10,7 +10,7 @@ from homeassistant.core import HomeAssistant
 from .const import DATA_COORDINATOR, DOMAIN
 
 TO_REDACT_INFO = [CONF_EMAIL, CONF_PASSWORD]
-TO_REDACT_DATA = ["vin", "id"]
+TO_REDACT_DATA = ["vin", "id", "token","access_token","refresh_token","session_id"]
 
 
 async def async_get_config_entry_diagnostics(

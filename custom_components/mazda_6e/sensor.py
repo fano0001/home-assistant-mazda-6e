@@ -105,15 +105,6 @@ SENSOR_TYPES: tuple[Mazda6eSensorDescription, ...] = (
         device_class=SensorDeviceClass.PRESSURE,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda data: data["status"]["tire"]["rightBack"]["pressure"],
-    ),
-    Mazda6eSensorDescription(
-        key="battery_max_soc_percent",
-        translation_key="battery_max_soc_percent",
-        icon="mdi:battery-heart-variant",
-        native_unit_of_measurement=PERCENTAGE,
-        device_class=SensorDeviceClass.BATTERY,
-        state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda data: data["status"]["charge"]["maxSocPercent"],
     )
 )
 
