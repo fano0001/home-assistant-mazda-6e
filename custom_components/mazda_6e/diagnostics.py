@@ -18,7 +18,7 @@ async def async_get_config_entry_diagnostics(
 ) -> dict[str, Any]:
     """Return diagnostics for a config entry."""
 
-    coordinator = hass.data[DOMAIN][config_entry.entry_id][DATA_COORDINATOR]
+    coordinator = hass.data[DOMAIN][config_entry.entry_id]
 
     vehicles = []
 
