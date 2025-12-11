@@ -11,7 +11,7 @@ from homeassistant.components.sensor import (
     SensorStateClass
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import UnitOfLength, PERCENTAGE, UnitOfPressure, SPEED_KILOMETERS_PER_HOUR
+from homeassistant.const import UnitOfLength, PERCENTAGE, UnitOfPressure, UnitOfSpeed
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -65,7 +65,7 @@ SENSOR_TYPES: tuple[Mazda6eSensorDescription, ...] = (
         key="current_speed",
         translation_key="current_speed",
         icon="mdi:speedometer",
-        native_unit_of_measurement=SPEED_KILOMETERS_PER_HOUR,
+        native_unit_of_measurement=UnitOfSpeed.KILOMETERS_PER_HOUR,
         device_class=SensorDeviceClass.SPEED,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda data: data["status"]["vehicleStatus"]["speed"],
