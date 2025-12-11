@@ -64,6 +64,9 @@
       "battery_state_of_charge": {
         "name": "Batterieladestand"
       },
+      "current_speed": {
+        "name": "Aktuelle Geschwindigkeit"
+      },
       "front_left_tire_pressure": {
         "name": "Reifendruck vorne links"
       },

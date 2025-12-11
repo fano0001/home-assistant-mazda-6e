@@ -11,7 +11,7 @@ from homeassistant.components.sensor import (
     SensorStateClass
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import UnitOfLength, PERCENTAGE, UnitOfPressure
+from homeassistant.const import UnitOfLength, PERCENTAGE, UnitOfPressure, SPEED_KILOMETERS_PER_HOUR
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -62,6 +62,15 @@ SENSOR_TYPES: tuple[Mazda6eSensorDescription, ...] = (
         value_fn=lambda data: data["status"]["vehicleStatus"]["totalMileage"],
     ),
     Mazda6eSensorDescription(
+        key="current_speed",
+        translation_key="current_speed",
+        icon="mdi:speedometer",
+        native_unit_of_measurement=SPEED_KILOMETERS_PER_HOUR,
+        device_class=SensorDeviceClass.SPEED,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: data["status"]["vehicleStatus"]["speed"],
+    ),
+    Mazda6eSensorDescription(
         key="front_left_tire_pressure",
         translation_key="front_left_tire_pressure",
         icon="mdi:car-tire-alert",
@@ -105,7 +114,7 @@ SENSOR_TYPES: tuple[Mazda6eSensorDescription, ...] = (
         device_class=SensorDeviceClass.BATTERY,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda data: data["status"]["charge"]["maxSocPercent"],
-    ),
+    )
 )
 
 
