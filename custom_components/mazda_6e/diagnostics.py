@@ -7,10 +7,10 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_EMAIL, CONF_PASSWORD
 from homeassistant.core import HomeAssistant
 
-from .const import  DOMAIN
+from .const import DOMAIN
 
 TO_REDACT_CONFIG = [CONF_EMAIL, CONF_PASSWORD]
-TO_REDACT_DATA = ["vin", "id", "token","access_token","refresh_token","session_id"]
+TO_REDACT_DATA = ["vin", "id", "token", "access_token", "refresh_token", "session_id"]
 
 
 async def async_get_config_entry_diagnostics(

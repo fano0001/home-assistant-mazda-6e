@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+
 @dataclass
 class Mazda6eVehicle:
     vehicle_id: int

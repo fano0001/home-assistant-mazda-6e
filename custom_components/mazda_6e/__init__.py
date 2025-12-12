@@ -6,7 +6,6 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.helpers import aiohttp_client
 from homeassistant.const import Platform
 
-
 from .api import Mazda6EApi
 from .const import DOMAIN
 from .coordinator import Mazda6eCoordinator
@@ -17,6 +16,7 @@ PLATFORMS = [
 ]
 
 _LOGGER = logging.getLogger(__name__)
+
 
 async def trigger_reauthentication(hass: HomeAssistant, entry: ConfigEntry):
     """Start reauthentication flow."""
@@ -29,6 +29,7 @@ async def trigger_reauthentication(hass: HomeAssistant, entry: ConfigEntry):
             data=entry.data,
         )
     )
+
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
     _LOGGER.info("Setting up Mazda 6E integration")

@@ -21,6 +21,7 @@ STEP3_SCHEMA = vol.Schema({
     vol.Required("verification_code"): str
 })
 
+
 class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
 
@@ -30,8 +31,7 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self.deviceid = None
         self.email_enc = None
         self.api = None
-        self.reauth_entry = None   # <--- für Reauth
-
+        self.reauth_entry = None  # <--- for Reauth
 
     # ------------------------------------------------------------------
     # STEP 0: Re-Auth starten
@@ -40,7 +40,6 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """starts reauth, showing ui hint."""
         self.reauth_entry = self._get_reauth_entry()
         return await self.async_step_reauth_confirm()
-
 
     async def async_step_reauth_confirm(self, user_input=None):
         """reauth have to ask for E-Mail + Password + DeviceID again."""
@@ -55,11 +54,9 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         return await self.async_step_user(user_input)
 
-
     def _get_reauth_entry(self):
         """Helper function for Reauth."""
         return self.hass.config_entries.async_get_entry(self.context["entry_id"])
-
 
     # ------------------------------------------------------------------
     # STEP 1: Login with mail + password
@@ -101,7 +98,6 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         return await self.async_step_verify()
 
-
     # ------------------------------------------------------------------
     # STEP 2: confirm device with code
     # ------------------------------------------------------------------
@@ -140,7 +136,6 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 "deviceid": self.deviceid
             }
         )
-
 
     # ------------------------------------------------------------------
     #  finish Reauth

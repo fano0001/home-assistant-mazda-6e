@@ -9,6 +9,7 @@ from .models import Mazda6eVehicle
 
 _LOGGER = logging.getLogger(__name__)
 
+
 class Mazda6eCoordinator(DataUpdateCoordinator):
     def __init__(self, hass, config_entry, mazda6e_api):
         """Initialize my coordinator."""

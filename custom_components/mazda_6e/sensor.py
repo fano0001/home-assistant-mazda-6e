@@ -17,11 +17,11 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 
-
 from .const import DOMAIN
 from .models import Mazda6eVehicle
 
 _LOGGER = logging.getLogger(__name__)
+
 
 @dataclass(frozen=True, kw_only=True)
 class Mazda6eSensorDescription(SensorEntityDescription):
@@ -122,12 +122,12 @@ SENSOR_TYPES: tuple[Mazda6eSensorDescription, ...] = (
     )
 )
 
+
 async def async_setup_entry(
         hass: HomeAssistant,
         entry: ConfigEntry,
         async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-
     coordinator = hass.data[DOMAIN][entry.entry_id]
     entities = []
 
@@ -150,6 +150,7 @@ async def async_setup_entry(
             )
 
     async_add_entities(entities)
+
 
 class Mazda6eSensor(CoordinatorEntity, SensorEntity):
     """Mazda 6e base sensor."""
