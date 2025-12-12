@@ -89,13 +89,11 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self.email_enc = user_input[CONF_EMAIL]
         self.deviceid = user_input["deviceid"]
         self.token = data["token"]
-        self.device_name = "Home Assistant"
 
         try:
             await self.api.send_device_login(
                 self.token,
-                self.email_enc,
-                self.device_name
+                self.email_enc
             )
         except Exception as ex:
             _LOGGER.exception(
@@ -120,8 +118,7 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             await self.api.verify_device_code(
                 self.token,
                 self.email_enc,
-                code,
-                self.device_name
+                code
             )
         except Exception as ex:
             _LOGGER.exception(
