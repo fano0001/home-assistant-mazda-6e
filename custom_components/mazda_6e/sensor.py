@@ -109,7 +109,7 @@ SENSOR_TYPES: tuple[Mazda6eSensorDescription, ...] = (
     Mazda6eSensorDescription(
         key="chargeCurrent",
         translation_key="chargeCurrent",
-        icon="mdi:ev-station",
+        icon="mdi:current-ac",
         native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
         device_class=SensorDeviceClass.CURRENT,
         state_class=SensorStateClass.MEASUREMENT,
