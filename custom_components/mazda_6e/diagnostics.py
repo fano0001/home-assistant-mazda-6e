@@ -7,9 +7,9 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_EMAIL, CONF_PASSWORD
 from homeassistant.core import HomeAssistant
 
-from .const import DATA_COORDINATOR, DOMAIN
+from .const import  DOMAIN
 
-TO_REDACT_INFO = [CONF_EMAIL, CONF_PASSWORD]
+TO_REDACT_CONFIG = [CONF_EMAIL, CONF_PASSWORD]
 TO_REDACT_DATA = ["vin", "id", "token","access_token","refresh_token","session_id"]
 
 
@@ -18,11 +18,11 @@ async def async_get_config_entry_diagnostics(
 ) -> dict[str, Any]:
     """Return diagnostics for a config entry."""
 
-    coordinator = hass.data[DOMAIN][config_entry.entry_id]
+    data_entry = hass.data[DOMAIN][config_entry.entry_id]
 
     vehicles = []
 
-    for vehicle_id, entry in coordinator.data.items():
+    for vehicle_id, entry in data_entry.data.items():
         vehicle_status = entry.get("status", {})
         vehicles.append(
             {
@@ -32,7 +32,7 @@ async def async_get_config_entry_diagnostics(
         )
 
     diagnostics = {
-        "info": async_redact_data(config_entry.data, TO_REDACT_INFO),
+        "info": async_redact_data(config_entry.data, TO_REDACT_CONFIG),
         "vehicles": vehicles,
     }
 

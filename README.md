@@ -1,6 +1,9 @@
 
 # Introduction
-TBD
+This component has been created to be used with Home Assistant.
+
+Mazda 6e presents a possibility to connect your Mazda 6e vehicle to Home Assistant.
+Currently, the integration need the **encrypted** email and password from the official app to connect to Mazda API.
 
 # Installation
 
