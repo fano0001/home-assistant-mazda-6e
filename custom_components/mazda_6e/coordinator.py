@@ -23,9 +23,8 @@ class Mazda6eCoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self):
         """Fetch data from API"""
-        # -------------------------
-        # 1) Fahrzeuge abrufen
-        # -------------------------
+
+        # get vehicles
         vehicles_response = await self.api.async_get_vehicles()
 
         _LOGGER.debug("vehicles_response: %s", vehicles_response)
@@ -33,9 +32,7 @@ class Mazda6eCoordinator(DataUpdateCoordinator):
         vehicles: list[Mazda6eVehicle] = vehicles_response
         vehicle_status = {}
 
-        # -------------------------
-        # 2) Status pro Fahrzeug
-        # -------------------------
+        # get status for each vehicle
         for veh in vehicles:
             status_response = await self.api.async_get_vehicle_status(veh.vehicle_id)
 

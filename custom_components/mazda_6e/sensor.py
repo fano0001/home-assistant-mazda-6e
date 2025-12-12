@@ -23,13 +23,9 @@ from .models import Mazda6eVehicle
 
 _LOGGER = logging.getLogger(__name__)
 
-# ================================================================
-#  SENSOR DESCRIPTIONS
-# ================================================================
-
 @dataclass(frozen=True, kw_only=True)
 class Mazda6eSensorDescription(SensorEntityDescription):
-    """Beschreibung eines Mazda 6e Sensors."""
+    """Description of a Mazda 6e Sensor."""
     value_fn: Callable[[dict[str, Any]], Any]
 
 
@@ -126,11 +122,6 @@ SENSOR_TYPES: tuple[Mazda6eSensorDescription, ...] = (
     )
 )
 
-
-# ================================================================
-#  SETUP ENTRY
-# ================================================================
-
 async def async_setup_entry(
         hass: HomeAssistant,
         entry: ConfigEntry,
@@ -160,13 +151,8 @@ async def async_setup_entry(
 
     async_add_entities(entities)
 
-
-# ================================================================
-#  BASE ENTITY
-# ================================================================
-
 class Mazda6eSensor(CoordinatorEntity, SensorEntity):
-    """Ein generischer Mazda 6e Sensor."""
+    """Mazda 6e base sensor."""
 
     _attr_has_entity_name = True
     entity_description: Mazda6eSensorDescription
@@ -209,7 +195,7 @@ class Mazda6eSensor(CoordinatorEntity, SensorEntity):
             return self.entity_description.value_fn(data)
         except Exception as err:
             _LOGGER.warning(
-                "Mazda6eSensor '%s' konnte Wert nicht lesen: %s",
+                "Mazda6eSensor '%s' could not read value: %s",
                 self.entity_description.key,
                 err,
             )

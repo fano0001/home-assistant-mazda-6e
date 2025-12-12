@@ -46,7 +46,6 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     try:
         await coordinator.async_config_entry_first_refresh()
     except Exception as err:
-        # Prüfen auf auth Fehler → Reauth starten
         if getattr(err, "status", None) in (401, 403):
             _LOGGER.warning("Authentication failed: %s – triggering reauth", err)
             await trigger_reauthentication(hass, config_entry)
