@@ -11,7 +11,7 @@ from homeassistant.components.sensor import (
     SensorStateClass
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import UnitOfLength, PERCENTAGE, UnitOfPressure, UnitOfSpeed
+from homeassistant.const import UnitOfLength, PERCENTAGE, UnitOfPressure, UnitOfSpeed, UnitOfElectricCurrent, UnitOfTime
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -105,6 +105,24 @@ SENSOR_TYPES: tuple[Mazda6eSensorDescription, ...] = (
         device_class=SensorDeviceClass.PRESSURE,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda data: data["status"]["tire"]["rightBack"]["pressure"],
+    ),
+    Mazda6eSensorDescription(
+        key="chargeCurrent",
+        translation_key="chargeCurrent",
+        icon="mdi:ev-station",
+        native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
+        device_class=SensorDeviceClass.CURRENT,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: data["status"]["charge"]["chargeCurrent"],
+    ),
+    Mazda6eSensorDescription(
+        key="remainChargeTime",
+        translation_key="remainChargeTime",
+        icon="mdi:progress-clock",
+        native_unit_of_measurement=UnitOfTime.MINUTES,
+        device_class=SensorDeviceClass.DURATION,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: data["status"]["charge"]["remainChargeTime"],
     )
 )
 

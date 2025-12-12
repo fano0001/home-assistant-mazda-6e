@@ -61,6 +61,9 @@
       "battery_state_of_charge": {
         "name": "Charge level"
       },
+      "chargeCurrent": {
+        "name": "Current charge power"
+      },
       "current_speed": {
         "name": "Current speed"
       },
@@ -78,6 +81,9 @@
       },
       "rear_right_tire_pressure": {
         "name": "Rear right tire pressure"
+      },
+      "remainChargeTime": {
+        "name": "Remaining charge time"
       },
       "remaining_driving_range": {
         "name": "Remaining range"

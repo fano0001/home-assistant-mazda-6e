@@ -61,6 +61,9 @@
       "battery_state_of_charge": {
         "name": "Batterieladestand"
       },
+      "chargeCurrent": {
+        "name": "Aktuelle Stromstärke"
+      },
       "current_speed": {
         "name": "Aktuelle Geschwindigkeit"
       },
@@ -78,6 +81,9 @@
       },
       "rear_right_tire_pressure": {
         "name": "Reifendruck hinten rechts"
+      },
+      "remainChargeTime": {
+        "name": "Verbleibende Ladezeit"
       },
       "remaining_driving_range": {
         "name": "Verbleibende Reichweite"
