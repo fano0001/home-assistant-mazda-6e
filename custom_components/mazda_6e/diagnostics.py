@@ -1,3 +1,4 @@
+import logging
 from __future__ import annotations
 
 from typing import Any
@@ -10,6 +11,8 @@ from homeassistant.helpers.device_registry import DeviceEntry
 from homeassistant.exceptions import HomeAssistantError
 
 from .const import DOMAIN
+
+_LOGGER = logging.getLogger(__name__)
 
 TO_REDACT_CONFIG = [CONF_EMAIL, CONF_PASSWORD, 'email_enc', 'refresh', 'token']
 TO_REDACT_DATA = ["vin", "vehicle_id", "token", "access_token", "refresh_token", "session_id"]
@@ -54,6 +57,10 @@ async def async_get_device_diagnostics(
         if vehicle["vehicle_id"] == vehicle_id:
             target_vehicle = vehicle
             break
+
+    _LOGGER.warning("Diagnostics for vehicle_id: %s", vehicle_id)
+    _LOGGER.warning("Diagnostics deviceIdentifiers: %s", device.identifiers)
+    _LOGGER.warning("Diagnostics data_entry.data: %s", data_entry.data)
 
     if target_vehicle is None:
         raise HomeAssistantError(f"Vehicle with id '{vehicle_id}' not found")
