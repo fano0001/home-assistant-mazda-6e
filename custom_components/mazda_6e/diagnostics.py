@@ -50,24 +50,20 @@ async def async_get_device_diagnostics(
     """Return diagnostics for a device."""
     data_entry = hass.data[DOMAIN][config_entry.entry_id]
 
-    vehicle_id = next(iter(device.identifiers))[1]
+    vehicleId = next(iter(device.identifiers))[1]
 
     target_vehicle = None
-    for vehicle in data_entry.data:
-        if vehicle["vehicle_id"] == vehicle_id:
-            target_vehicle = vehicle
+    for vehicle_id, entry in data_entry.data.items():
+        if vehicle_id == int(vehicleId):
+            target_vehicle = entry
             break
 
-    _LOGGER.warning("Diagnostics for vehicle_id: %s", vehicle_id)
-    _LOGGER.warning("Diagnostics deviceIdentifiers: %s", device.identifiers)
-    _LOGGER.warning("Diagnostics data_entry.data: %s", data_entry.data)
-
     if target_vehicle is None:
-        raise HomeAssistantError(f"Vehicle with id '{vehicle_id}' not found")
+        raise HomeAssistantError(f"Vehicle with id '{vehicleId}' not found")
 
     diagnostics_data = {
         "info": async_redact_data(config_entry.data, TO_REDACT_CONFIG),
-        "data": async_redact_data(target_vehicle, TO_REDACT_DATA),
+        "data": async_redact_data(target_vehicle.get("status", {}), TO_REDACT_DATA),
     }
 
     return diagnostics_data
