@@ -1,6 +1,6 @@
-import logging
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from homeassistant.components.diagnostics.util import async_redact_data
