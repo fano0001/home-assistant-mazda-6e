@@ -38,6 +38,9 @@
       "front_right_window": {
         "name": "Passenger window"
       },
+      "plugged_in": {
+        "name": "Plugged in"
+      },
       "rear_left_door": {
         "name": "Rear left door"
       },

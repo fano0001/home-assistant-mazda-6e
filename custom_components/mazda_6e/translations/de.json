@@ -38,6 +38,9 @@
       "front_right_window": {
         "name": "Beifahrerfenster"
       },
+      "plugged_in": {
+        "name": "Eingesteckt"
+      },
       "rear_left_door": {
         "name": "Linke Hintertür"
       },
