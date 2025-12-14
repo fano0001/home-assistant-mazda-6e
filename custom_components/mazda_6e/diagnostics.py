@@ -6,6 +6,8 @@ from homeassistant.components.diagnostics.util import async_redact_data
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_EMAIL, CONF_PASSWORD
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceEntry
+from homeassistant.exceptions import HomeAssistantError
 
 from .const import DOMAIN
 
@@ -37,3 +39,28 @@ async def async_get_config_entry_diagnostics(
     }
 
     return diagnostics
+
+
+async def async_get_device_diagnostics(
+        hass: HomeAssistant, config_entry: ConfigEntry, device: DeviceEntry
+) -> dict[str, Any]:
+    """Return diagnostics for a device."""
+    data_entry = hass.data[DOMAIN][config_entry.entry_id]
+
+    vehicle_id = next(iter(device.identifiers))[1]
+
+    target_vehicle = None
+    for vehicle in data_entry.data:
+        if vehicle["vehicle_id"] == vehicle_id:
+            target_vehicle = vehicle
+            break
+
+    if target_vehicle is None:
+        raise HomeAssistantError(f"Vehicle with id '{vehicle_id}' not found")
+
+    diagnostics_data = {
+        "info": async_redact_data(config_entry.data, TO_REDACT_CONFIG),
+        "data": async_redact_data(target_vehicle, TO_REDACT_DATA),
+    }
+
+    return diagnostics_data
