@@ -124,7 +124,7 @@ SENSOR_TYPES: tuple[Mazda6eSensorDescription, ...] = (
         key="chargeStatus",
         translation_key="chargeStatus",
         icon="mdi:state-machine",
-        value_fn=lambda data: charge_status_value
+        value_fn=lambda data: charge_status_value(data)
     )
 )
 
