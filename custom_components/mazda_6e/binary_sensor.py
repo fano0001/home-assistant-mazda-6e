@@ -16,7 +16,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 
 from .const import DOMAIN
-from .models import Mazda6eVehicle, ChargeConnectionStatus
+from .models import Mazda6eVehicle, ChargeConnectionStatus, ChargeStatus
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -103,6 +103,12 @@ SENSOR_TYPES: tuple[Mazda6eBinarySensorDescription, ...] = (
         translation_key="plugged_in",
         device_class=BinarySensorDeviceClass.PLUG,
         value_fn=lambda data: data["status"]["charge"]["chargeConStatus"] == ChargeConnectionStatus.CONNECTED,
+    ),
+    Mazda6eBinarySensorDescription(
+        key="is_charging",
+        translation_key="is_charging",
+        device_class=BinarySensorDeviceClass.BATTERY_CHARGING,
+        value_fn=lambda data: data["status"]["charge"]["chargeStatus"] == ChargeStatus.CHARGING,
     )
 )
 

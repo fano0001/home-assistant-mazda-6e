@@ -38,6 +38,9 @@
       "front_right_window": {
         "name": "Passenger window"
       },
+      "is_charging": {
+        "name": "Is charging"
+      },
       "plugged_in": {
         "name": "Plugged in"
       },

@@ -38,6 +38,9 @@
       "front_right_window": {
         "name": "Beifahrerfenster"
       },
+      "is_charging": {
+        "name": "Lädt gerade"
+      },
       "plugged_in": {
         "name": "Eingesteckt"
       },
