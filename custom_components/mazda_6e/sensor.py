@@ -18,7 +18,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 
 from .const import DOMAIN
-from .models import Mazda6eVehicle
+from .models import Mazda6eVehicle, ChargeStatus
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -119,8 +119,22 @@ SENSOR_TYPES: tuple[Mazda6eSensorDescription, ...] = (
         device_class=SensorDeviceClass.DURATION,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda data: data["status"]["charge"]["remainChargeTime"],
+    ),
+    Mazda6eSensorDescription(
+        key="chargeStatus",
+        translation_key="chargeStatus",
+        icon="mdi:state-machine",
+        value_fn=lambda data: charge_status_value
     )
 )
+
+
+def charge_status_value(data):
+    raw = data["status"]["charge"].get("chargeStatus")
+    try:
+        return ChargeStatus(raw).name
+    except (ValueError, TypeError):
+        return "UNKNOWN"
 
 
 async def async_setup_entry(

@@ -70,6 +70,9 @@
       "chargeCurrent": {
         "name": "Aktuelle Stromstärke"
       },
+      "chargeStatus": {
+        "name": "Ladestatus"
+      },
       "current_speed": {
         "name": "Aktuelle Geschwindigkeit"
       },
