@@ -98,5 +98,16 @@
         "name": "Remaining range"
       }
     }
+  },
+  "state": {
+    "mazda_6e": {
+      "chargeStatus": {
+        "CHARGING": "charging",
+        "COMPLETED": "completed",
+        "NOT_CHARGING": "Not charging",
+        "PAUSED": "paused",
+        "UNKNOWN": "unknown"
+      }
+    }
   }
 }

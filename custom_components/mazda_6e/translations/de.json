@@ -98,5 +98,16 @@
         "name": "Verbleibende Reichweite"
       }
     }
+  },
+  "state": {
+    "mazda_6e": {
+      "chargeStatus": {
+        "CHARGING": "Lädt",
+        "COMPLETED": "Abgeschlossen",
+        "NOT_CHARGING": "Lädt nicht",
+        "PAUSED": "Pausiert",
+        "UNKNOWN": "Unbekannt"
+      }
+    }
   }
 }
