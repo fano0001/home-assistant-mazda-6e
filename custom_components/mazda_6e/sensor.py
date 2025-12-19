@@ -130,17 +130,9 @@ SENSOR_TYPES: tuple[Mazda6eSensorDescription, ...] = (
         icon="mdi:state-machine",
         device_class=SensorDeviceClass.ENUM,
         options=[e.name for e in ChargeStatus],
-        value_fn=lambda data: charge_status_value(data)
+        value_fn=lambda data: ChargeStatus.safe_name(data["status"]["charge"].get("chargeStatus"))
     )
 )
-
-
-def charge_status_value(data):
-    raw = data["status"]["charge"].get("chargeStatus")
-    try:
-        return ChargeStatus(raw).name
-    except (ValueError, TypeError):
-        return "UNKNOWN"
 
 
 async def async_setup_entry(
@@ -193,6 +185,7 @@ class Mazda6eSensor(CoordinatorEntity, SensorEntity):
         _LOGGER.debug("Mazda6eSensor: '%s', '%s'", self.entity_description, self.vehicle)
 
         self._attr_unique_id = f"{vehicle.vehicle_id}_{description.key}"
+        self._attr_translation_key = description.translation_key
 
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, vehicle_id)},
