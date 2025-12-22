@@ -2,6 +2,7 @@
   "entity": {
     "sensor": {
       "battery_state_of_charge": {
+        "default": "mdi:battery-unknown",
         "range": {
           "0": "mdi:battery-outline",
           "10": "mdi:battery-10",

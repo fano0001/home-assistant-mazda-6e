@@ -107,10 +107,10 @@
       "seat_status_front_left": {
         "name": "Driver seat status",
         "state": {
-          "FAN": "fan",
-          "HEATING": "heating",
-          "OFF": "off",
-          "UNKNOWN": "unknown"
+          "FAN": "Fan",
+          "HEATING": "Heating",
+          "OFF": "Off",
+          "UNKNOWN": "Unknown"
         }
       }
     }

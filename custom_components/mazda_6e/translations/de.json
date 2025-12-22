@@ -107,10 +107,10 @@
       "seat_status_front_left": {
         "name": "Fahrersitz status",
         "state": {
-          "FAN": "lüften",
-          "HEATING": "heizen",
-          "OFF": "aus",
-          "UNKNOWN": "unbekannt"
+          "FAN": "Lüften",
+          "HEATING": "Heizen",
+          "OFF": "Aus",
+          "UNKNOWN": "Unbekannt"
         }
       }
     }
