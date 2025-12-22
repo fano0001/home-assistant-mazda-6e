@@ -27,3 +27,17 @@ class ChargeStatus(IntEnum):
             return cls(value).name
         except (ValueError, TypeError):
             return "UNKNOWN"
+
+
+class SeatStatusMode(IntEnum):
+    UNKNOWN = -1
+    OFF = 0
+    HEATING = 1
+    FAN = 2
+
+    @classmethod
+    def safe_name(cls, value: int | None) -> str:
+        try:
+            return cls(value).name
+        except (ValueError, TypeError):
+            return "UNKNOWN"

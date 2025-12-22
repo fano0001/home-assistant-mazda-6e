@@ -18,7 +18,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 
 from .const import DOMAIN
-from .models import Mazda6eVehicle, ChargeStatus
+from .models import Mazda6eVehicle, ChargeStatus, SeatStatusMode
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -131,6 +131,14 @@ SENSOR_TYPES: tuple[Mazda6eSensorDescription, ...] = (
         device_class=SensorDeviceClass.ENUM,
         options=[e.name for e in ChargeStatus],
         value_fn=lambda data: ChargeStatus.safe_name(data["status"]["charge"].get("chargeStatus"))
+    ),
+    Mazda6eSensorDescription(
+        key="seat_status_front_left",
+        translation_key="seat_status_front_left",
+        icon="mdi:car-seat",
+        device_class=SensorDeviceClass.ENUM,
+        options=[e.name for e in SeatStatusMode],
+        value_fn=lambda data: SeatStatusMode.safe_name(data["status"]["seat"]['leftFront']['mode'])
     )
 )
 
@@ -185,7 +193,6 @@ class Mazda6eSensor(CoordinatorEntity, SensorEntity):
         _LOGGER.debug("Mazda6eSensor: '%s', '%s'", self.entity_description, self.vehicle)
 
         self._attr_unique_id = f"{vehicle.vehicle_id}_{description.key}"
-        self._attr_translation_key = description.translation_key
 
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, vehicle_id)},

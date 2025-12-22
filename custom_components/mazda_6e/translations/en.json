@@ -71,7 +71,14 @@
         "name": "Current charge power"
       },
       "chargeStatus": {
-        "name": "Charge status"
+        "name": "Charge status",
+        "state": {
+          "CHARGING": "charging",
+          "COMPLETED": "completed",
+          "NOT_CHARGING": "Not charging",
+          "PAUSED": "paused",
+          "UNKNOWN": "unknown"
+        }
       },
       "current_speed": {
         "name": "Current speed"
@@ -96,17 +103,15 @@
       },
       "remaining_driving_range": {
         "name": "Remaining range"
-      }
-    }
-  },
-  "state": {
-    "mazda_6e": {
-      "chargeStatus": {
-        "CHARGING": "charging",
-        "COMPLETED": "completed",
-        "NOT_CHARGING": "Not charging",
-        "PAUSED": "paused",
-        "UNKNOWN": "unknown"
+      },
+      "seat_status_front_left": {
+        "name": "Driver seat status",
+        "state": {
+          "FAN": "fan",
+          "HEATING": "heating",
+          "OFF": "off",
+          "UNKNOWN": "unknown"
+        }
       }
     }
   }

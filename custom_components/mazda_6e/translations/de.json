@@ -71,7 +71,14 @@
         "name": "Aktuelle Stromstärke"
       },
       "chargeStatus": {
-        "name": "Ladestatus"
+        "name": "Ladestatus",
+        "state": {
+          "CHARGING": "Lädt",
+          "COMPLETED": "Abgeschlossen",
+          "NOT_CHARGING": "Läd nicht",
+          "PAUSED": "Pausiert",
+          "UNKNOWN": "Unebkannt"
+        }
       },
       "current_speed": {
         "name": "Aktuelle Geschwindigkeit"
@@ -96,17 +103,15 @@
       },
       "remaining_driving_range": {
         "name": "Verbleibende Reichweite"
-      }
-    }
-  },
-  "state": {
-    "mazda_6e": {
-      "chargeStatus": {
-        "CHARGING": "Lädt",
-        "COMPLETED": "Abgeschlossen",
-        "NOT_CHARGING": "Lädt nicht",
-        "PAUSED": "Pausiert",
-        "UNKNOWN": "Unbekannt"
+      },
+      "seat_status_front_left": {
+        "name": "Fahrersitz status",
+        "state": {
+          "FAN": "lüften",
+          "HEATING": "heizen",
+          "OFF": "aus",
+          "UNKNOWN": "unbekannt"
+        }
       }
     }
   }
