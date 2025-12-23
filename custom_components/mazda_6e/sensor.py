@@ -33,7 +33,6 @@ SENSOR_TYPES: tuple[Mazda6eSensorDescription, ...] = (
     Mazda6eSensorDescription(
         key="battery_state_of_charge",
         translation_key="battery_state_of_charge",
-        icon="mdi:battery",
         native_unit_of_measurement=PERCENTAGE,
         device_class=SensorDeviceClass.BATTERY,
         state_class=SensorStateClass.MEASUREMENT,
@@ -135,7 +134,6 @@ SENSOR_TYPES: tuple[Mazda6eSensorDescription, ...] = (
     Mazda6eSensorDescription(
         key="seat_status_front_left",
         translation_key="seat_status_front_left",
-        icon="mdi:car-seat",
         device_class=SensorDeviceClass.ENUM,
         options=[e.name for e in SeatStatusMode],
         value_fn=lambda data: SeatStatusMode.safe_name(data["status"]["seat"]['leftFront']['mode'])
