@@ -18,6 +18,7 @@
         }
       },
       "seat_status_front_left": {
+        "default": "mdi:car-seat",
         "state": {
           "FAN": "mdi:car-seat-cooler",
           "HEATING": "mdi:car-seat-heater",
@@ -25,6 +26,7 @@
         }
       },
       "seat_status_front_right": {
+        "default": "mdi:car-seat",
         "state": {
           "FAN": "mdi:car-seat-cooler",
           "HEATING": "mdi:car-seat-heater",
