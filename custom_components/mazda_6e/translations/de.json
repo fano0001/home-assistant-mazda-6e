@@ -112,6 +112,15 @@
           "OFF": "Aus",
           "UNKNOWN": "Unbekannt"
         }
+      },
+      "seat_status_front_right": {
+        "name": "Beifahrersitz status",
+        "state": {
+          "FAN": "Lüften",
+          "HEATING": "Heizen",
+          "OFF": "Aus",
+          "UNKNOWN": "Unbekannt"
+        }
       }
     }
   }

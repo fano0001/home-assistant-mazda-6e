@@ -27,6 +27,7 @@ _LOGGER = logging.getLogger(__name__)
 class Mazda6eSensorDescription(SensorEntityDescription):
     """Description of a Mazda 6e Sensor."""
     value_fn: Callable[[dict[str, Any]], Any]
+    attrs_fn: Callable[[dict], dict] | None = None
 
 
 SENSOR_TYPES: tuple[Mazda6eSensorDescription, ...] = (
@@ -136,7 +137,24 @@ SENSOR_TYPES: tuple[Mazda6eSensorDescription, ...] = (
         translation_key="seat_status_front_left",
         device_class=SensorDeviceClass.ENUM,
         options=[e.name for e in SeatStatusMode],
-        value_fn=lambda data: SeatStatusMode.safe_name(data["status"]["seat"]['leftFront']['mode'])
+        value_fn=lambda data: SeatStatusMode.safe_name(data["status"]["seat"]['leftFront']['mode']),
+        attrs_fn=lambda data: {
+            "level": data["status"]["seat"]["leftFront"]["level"],
+            "heat_status": data["status"]["seat"]["leftFront"]["heatStatus"],
+            "vent_status": data["status"]["seat"]["leftFront"]["ventStatus"]
+        }
+    ),
+    Mazda6eSensorDescription(
+        key="seat_status_front_right",
+        translation_key="seat_status_front_right",
+        device_class=SensorDeviceClass.ENUM,
+        options=[e.name for e in SeatStatusMode],
+        value_fn=lambda data: SeatStatusMode.safe_name(data["status"]["seat"]['rightFront']['mode']),
+        attrs_fn=lambda data: {
+            "level": data["status"]["seat"]["rightFront"]["level"],
+            "heat_status": data["status"]["seat"]["rightFront"]["heatStatus"],
+            "vent_status": data["status"]["seat"]["rightFront"]["ventStatus"]
+        }
     )
 )
 
@@ -219,3 +237,20 @@ class Mazda6eSensor(CoordinatorEntity, SensorEntity):
                 err,
             )
             return None
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        """Return extra attributes for the sensor."""
+        if not self.entity_description.attrs_fn:
+            return {}
+
+        try:
+            data = self.coordinator.data[self.vehicle.vehicle_id]
+            return self.entity_description.attrs_fn(data)
+        except Exception as err:
+            _LOGGER.debug(
+                "Failed to compute attributes for %s: %s",
+                self.entity_id,
+                err,
+            )
+            return {}

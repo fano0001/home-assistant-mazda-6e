@@ -112,6 +112,15 @@
           "OFF": "Off",
           "UNKNOWN": "Unknown"
         }
+      },
+      "seat_status_front_right": {
+        "name": "Passenger seat status",
+        "state": {
+          "FAN": "Fan",
+          "HEATING": "Heating",
+          "OFF": "Off",
+          "UNKNOWN": "Unknown"
+        }
       }
     }
   }
