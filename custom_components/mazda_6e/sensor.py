@@ -160,10 +160,29 @@ SENSOR_TYPES: tuple[Mazda6eSensorDescription, ...] = (
     Mazda6eSensorDescription(
         key="temperature_inside",
         translation_key="temperature_inside",
+        icon="mdi:thermometer",
         device_class=SensorDeviceClass.TEMPERATURE,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda data: temperature(data["status"]["hvac"]['insideTemp'])
+    ),
+    Mazda6eSensorDescription(
+        key="temperature_outside",
+        translation_key="temperature_outside",
+        icon="mdi:thermometer",
+        device_class=SensorDeviceClass.TEMPERATURE,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: temperature(data["status"]["hvac"]['outsideTemp'])
+    ),
+    Mazda6eSensorDescription(
+        key="humidity_inside",
+        translation_key="humidity_inside",
+        icon="mdi:water-percent",
+        device_class=SensorDeviceClass.HUMIDITY,
+        native_unit_of_measurement=PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: data["status"]["hvac"]['insideHumidity']
     )
 )
 

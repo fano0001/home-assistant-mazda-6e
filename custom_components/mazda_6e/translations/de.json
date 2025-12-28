@@ -89,6 +89,9 @@
       "front_right_tire_pressure": {
         "name": "Reifendruck vorne rechts"
       },
+      "humidity_inside": {
+        "name": "Luftfeuchtigkeit"
+      },
       "odometer": {
         "name": "Kilometerstand"
       },
@@ -124,6 +127,9 @@
       },
       "temperature_inside": {
         "name": "Innenraumtemperatur"
+      },
+      "temperature_outside": {
+        "name": "Außentemperature"
       }
     }
   }

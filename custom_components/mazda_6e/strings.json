@@ -89,6 +89,9 @@
       "front_right_tire_pressure": {
         "name": "Front right tire pressure"
       },
+      "humidity_inside": {
+        "name": "Humidity"
+      },
       "odometer": {
         "name": "Odometer"
       },
@@ -124,6 +127,9 @@
       },
       "temperature_inside": {
         "name": "Inside temperature"
+      },
+      "temperature_outside": {
+        "name": "Outside temperature"
       }
     }
   }
