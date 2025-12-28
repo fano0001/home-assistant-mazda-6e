@@ -18,6 +18,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 
 from .const import DOMAIN
+from .helpers.validators import speed_value
 from .models import Mazda6eVehicle, ChargeStatus, SeatStatusMode
 
 _LOGGER = logging.getLogger(__name__)
@@ -64,7 +65,7 @@ SENSOR_TYPES: tuple[Mazda6eSensorDescription, ...] = (
         native_unit_of_measurement=UnitOfSpeed.KILOMETERS_PER_HOUR,
         device_class=SensorDeviceClass.SPEED,
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda data: data["status"]["vehicleStatus"]["speed"],
+        value_fn=lambda data: speed_value(data)
     ),
     Mazda6eSensorDescription(
         key="front_left_tire_pressure",
