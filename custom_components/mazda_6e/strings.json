@@ -121,6 +121,9 @@
           "OFF": "Off",
           "UNKNOWN": "Unknown"
         }
+      },
+      "temperature_inside": {
+        "name": "Inside temperature"
       }
     }
   }

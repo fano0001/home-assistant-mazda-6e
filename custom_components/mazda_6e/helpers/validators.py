@@ -19,3 +19,15 @@ def speed_value(data):
         return None
 
     return speed
+
+
+def temperature(raw):
+    if raw is None:
+        return None
+
+    try:
+        raw = float(raw)
+    except (TypeError, ValueError):
+        return None
+
+    return raw / 10

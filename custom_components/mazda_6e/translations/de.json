@@ -121,6 +121,9 @@
           "OFF": "Aus",
           "UNKNOWN": "Unbekannt"
         }
+      },
+      "temperature_inside": {
+        "name": "Innenraumtemperatur"
       }
     }
   }

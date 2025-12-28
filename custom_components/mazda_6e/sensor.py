@@ -11,14 +11,14 @@ from homeassistant.components.sensor import (
     SensorStateClass
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import UnitOfLength, PERCENTAGE, UnitOfPressure, UnitOfSpeed, UnitOfElectricCurrent, UnitOfTime
+from homeassistant.const import UnitOfLength, PERCENTAGE, UnitOfPressure, UnitOfSpeed, UnitOfElectricCurrent, UnitOfTime, UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 
 from .const import DOMAIN
-from .helpers.validators import speed_value
+from .helpers.validators import speed_value, temperature
 from .models import Mazda6eVehicle, ChargeStatus, SeatStatusMode
 
 _LOGGER = logging.getLogger(__name__)
@@ -156,6 +156,14 @@ SENSOR_TYPES: tuple[Mazda6eSensorDescription, ...] = (
             "heat_status": data["status"]["seat"]["rightFront"]["heatStatus"],
             "vent_status": data["status"]["seat"]["rightFront"]["ventStatus"]
         }
+    ),
+    Mazda6eSensorDescription(
+        key="temperature_inside",
+        translation_key="temperature_inside",
+        device_class=SensorDeviceClass.TEMPERATURE,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: temperature(data["status"]["hvac"]['insideTemp'])
     )
 )
 
