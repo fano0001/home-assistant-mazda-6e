@@ -1,10 +1,10 @@
 import logging
 
-from homeassistant.config_entries import ConfigEntry, SOURCE_REAUTH
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.helpers import aiohttp_client
 from homeassistant.const import Platform
+from homeassistant.exceptions import ConfigEntryAuthFailed
 
 from .api import Mazda6EApi
 from .const import DOMAIN
@@ -16,19 +16,6 @@ PLATFORMS = [
 ]
 
 _LOGGER = logging.getLogger(__name__)
-
-
-async def trigger_reauthentication(hass: HomeAssistant, entry: ConfigEntry):
-    """Start reauthentication flow."""
-    _LOGGER.warning("Starting reauthentication flow for Mazda 6E")
-
-    hass.async_create_task(
-        hass.config_entries.flow.async_init(
-            DOMAIN,
-            context={"source": SOURCE_REAUTH, "entry_id": entry.entry_id},
-            data=entry.data,
-        )
-    )
 
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
@@ -49,8 +36,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     except Exception as err:
         if getattr(err, "status", None) in (401, 403):
             _LOGGER.warning("Authentication failed: %s – triggering reauth", err)
-            await trigger_reauthentication(hass, config_entry)
-            return False
+            raise ConfigEntryAuthFailed from err
 
         raise
 
