@@ -4,6 +4,7 @@ import logging
 
 from .const import PUB_KEY, DEVICE_NAME
 from .models import Mazda6eVehicle
+from homeassistant.exceptions import ConfigEntryAuthFailed
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -44,7 +45,7 @@ class Mazda6EApi:
         # token expired
         if raw.get("code") == "APP_1_1_02_004":
             if not retry:
-                raise Exception("Token expired even after retry.")
+                raise ConfigEntryAuthFailed("Token expired and refresh failed")
 
             _LOGGER.debug("Token expired -> refreshing token...")
             await self.refresh_token()
@@ -115,7 +116,7 @@ class Mazda6EApi:
         _LOGGER.debug("refresh-token response: %s", raw)
 
         if not raw.get("success"):
-            raise Exception("Token refresh failed")
+            raise ConfigEntryAuthFailed("Token refresh failed")
 
         self.token = raw["data"]["token"]
         self.refresh = raw["data"]["refreshToken"]
