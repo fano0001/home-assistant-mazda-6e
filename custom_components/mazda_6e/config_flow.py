@@ -46,7 +46,14 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is None:
             return self.async_show_form(
                 step_id="reauth_confirm",
-                data_schema=STEP1_SCHEMA,
+                data_schema=vol.Schema({
+                    vol.Required(CONF_EMAIL): str,
+                    vol.Required(CONF_PASSWORD): str,
+                    vol.Required(
+                        "deviceid",
+                        default=self.reauth_entry.data.get("deviceid"),
+                    ): str,
+                }),
                 description_placeholders={
                     "email": self.reauth_entry.data.get("email_enc", "<unknown>")
                 }
@@ -150,6 +157,10 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 "email_enc": self.email_enc,
                 "deviceid": self.deviceid
             }
+        )
+
+        self.hass.async_create_task(
+            self.hass.config_entries.async_reload(self.reauth_entry.entry_id)
         )
 
         return self.async_abort(reason="reauth_successful")
