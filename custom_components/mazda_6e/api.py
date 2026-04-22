@@ -16,9 +16,9 @@ HEADERS_BASE = {
     "apptype": "IOS",
     "appid": "cma",
     "accept": "*/*",
-    "appversion": "V1.1.3",
+    "appversion": "V1.2.0",
     "accept-language": "de-DE;q=1.0",
-    "user-agent": "overseas/1.1.3 (com.mazda.mazda6e)",
+    "user-agent": "overseas/1.2.0 (com.mazda.mazda6e; build:4; iOS 26.4.1) Alamofire/5.5.0",
     "language": "de_DE",
 }
 
