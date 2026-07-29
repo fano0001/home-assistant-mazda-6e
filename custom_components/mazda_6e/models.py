@@ -10,8 +10,8 @@ class Mazda6eVehicle:
 
 
 class ChargeConnectionStatus(IntEnum):
-    DISCONNECTED = 1
-    CONNECTED = 3
+    DISCONNECTED = 0
+    CONNECTED = 1
 
 
 class ChargeStatus(IntEnum):
