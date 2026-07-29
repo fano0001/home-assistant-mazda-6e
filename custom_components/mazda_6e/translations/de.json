@@ -56,9 +56,6 @@
       "rear_right_window": {
         "name": "Fenster hinten rechts"
       },
-      "sunroof": {
-        "name": "Sonnendach"
-      },
       "trunk": {
         "name": "Kofferraum"
       }
@@ -79,9 +76,6 @@
           "PAUSED": "Pausiert",
           "UNKNOWN": "Unebkannt"
         }
-      },
-      "current_speed": {
-        "name": "Aktuelle Geschwindigkeit"
       },
       "front_left_tire_pressure": {
         "name": "Reifendruck vorne links"
@@ -127,9 +121,6 @@
       },
       "temperature_inside": {
         "name": "Innenraumtemperatur"
-      },
-      "temperature_outside": {
-        "name": "Außentemperature"
       }
     }
   }

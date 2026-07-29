@@ -92,13 +92,6 @@ SENSOR_TYPES: tuple[Mazda6eBinarySensorDescription, ...] = (
         value_fn=lambda data: data["status"]["window"]["windows"][3],
     ),
     Mazda6eBinarySensorDescription(
-        key="sunroof",
-        translation_key="sunroof",
-        icon="mdi:blinds-vertical",
-        device_class=BinarySensorDeviceClass.WINDOW,
-        value_fn=lambda data: data["status"]["window"]["sunroof"],
-    ),
-    Mazda6eBinarySensorDescription(
         key="plugged_in",
         translation_key="plugged_in",
         device_class=BinarySensorDeviceClass.PLUG,

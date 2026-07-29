@@ -56,9 +56,6 @@
       "rear_right_window": {
         "name": "Rear right window"
       },
-      "sunroof": {
-        "name": "Sunroof"
-      },
       "trunk": {
         "name": "Trunk"
       }
@@ -79,9 +76,6 @@
           "PAUSED": "paused",
           "UNKNOWN": "unknown"
         }
-      },
-      "current_speed": {
-        "name": "Current speed"
       },
       "front_left_tire_pressure": {
         "name": "Front left tire pressure"
@@ -127,9 +121,6 @@
       },
       "temperature_inside": {
         "name": "Inside temperature"
-      },
-      "temperature_outside": {
-        "name": "Outside temperature"
       }
     }
   }

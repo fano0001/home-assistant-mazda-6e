@@ -59,15 +59,6 @@ SENSOR_TYPES: tuple[Mazda6eSensorDescription, ...] = (
         value_fn=lambda data: data["status"]["vehicleStatus"]["totalMileage"],
     ),
     Mazda6eSensorDescription(
-        key="current_speed",
-        translation_key="current_speed",
-        icon="mdi:speedometer",
-        native_unit_of_measurement=UnitOfSpeed.KILOMETERS_PER_HOUR,
-        device_class=SensorDeviceClass.SPEED,
-        state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda data: speed_value(data)
-    ),
-    Mazda6eSensorDescription(
         key="front_left_tire_pressure",
         translation_key="front_left_tire_pressure",
         icon="mdi:car-tire-alert",
@@ -165,15 +156,6 @@ SENSOR_TYPES: tuple[Mazda6eSensorDescription, ...] = (
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda data: temperature(data["status"]["hvac"]['insideTemp'])
-    ),
-    Mazda6eSensorDescription(
-        key="temperature_outside",
-        translation_key="temperature_outside",
-        icon="mdi:thermometer",
-        device_class=SensorDeviceClass.TEMPERATURE,
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-        state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda data: temperature(data["status"]["hvac"]['outsideTemp'])
     ),
     Mazda6eSensorDescription(
         key="humidity_inside",
