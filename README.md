@@ -3,7 +3,7 @@
 This component has been created to be used with Home Assistant.
 
 Mazda 6e presents a possibility to connect your Mazda 6e vehicle to Home Assistant.
-This local branch accepts your ordinary email and password and encrypts them internally. A device ID is generated automatically and retained for reauthentication. Enter the verification code sent by email when requested. Existing entries remain compatible; no migration or manual device ID is needed. Plaintext credentials and passwords are not saved in the config entry.
+This integration accepts your email and password and encrypts them internally. A device ID is generated automatically and retained for reauthentication. Enter the verification code sent by email when requested. Existing entries remain compatible; no migration or manual device ID is needed. Plaintext credentials and passwords are not saved in the config entry.
 
 # Installation
 
