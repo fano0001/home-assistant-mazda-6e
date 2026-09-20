@@ -11,7 +11,7 @@
           "email": "Email",
           "password": "Passwort"
         },
-        "description": "Bitte gib deine normale Email und dein Passwort ein. Die Device-ID wird automatisch erstellt.",
+        "description": "Bitte gib deine Email und dein Passwort ein.",
         "title": "Mazda 6e Login"
       },
       "verify": {
@@ -26,7 +26,7 @@
           "email": "Email",
           "password": "Passwort"
         },
-        "description": "Bitte melde dich erneut an. Die gespeicherte Device-ID wird beibehalten.",
+        "description": "Bitte melde dich erneut an.",
         "title": "Mazda 6e Login"
       }
     },

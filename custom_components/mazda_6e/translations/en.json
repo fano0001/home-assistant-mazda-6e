@@ -26,7 +26,7 @@
           "email": "Email",
           "password": "Password"
         },
-        "description": "Sign in again with your ordinary email and password. Your saved device ID is retained.",
+        "description": "Sign in again with your email and password.",
         "title": "Mazda 6e Login"
       }
     },
