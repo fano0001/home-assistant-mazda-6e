@@ -1,32 +1,32 @@
 {
   "config": {
     "error": {
-      "device_login_failed": "Geräte-Anmeldung fehlgeschlagen",
-      "login_failed": "Anmeldung fehlgeschlagen",
-      "verification_failed": "Falscher Code"
+      "device_login_failed": "Device login failed",
+      "login_failed": "Login failed",
+      "verification_failed": "Bad verification code"
     },
     "step": {
       "user": {
         "data": {
           "email": "Email",
-          "password": "Passwort"
+          "password": "Password"
         },
-        "description": "Bitte gib deine normale Email und dein Passwort ein. Die Device-ID wird automatisch erstellt.",
+        "description": "Enter your ordinary email and password. A device ID is generated automatically.",
         "title": "Mazda 6e Login"
       },
       "verify": {
         "data": {
-          "verification_code": "Code"
+          "verification_code": "verification code"
         },
-        "description": "Gib den Code ein, den du per Email erhalten hast.",
-        "title": "Verifizierungscode"
+        "description": "Enter the code you received by email.",
+        "title": "Verification Code"
       },
       "reauth_confirm": {
         "data": {
           "email": "Email",
-          "password": "Passwort"
+          "password": "Password"
         },
-        "description": "Bitte melde dich erneut an. Die gespeicherte Device-ID wird beibehalten.",
+        "description": "Sign in again with your ordinary email and password. Your saved device ID is retained.",
         "title": "Mazda 6e Login"
       }
     },

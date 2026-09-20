@@ -33,7 +33,7 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self.reauth_entry = None  # <--- for Reauth
 
     # ------------------------------------------------------------------
-    # STEP 0: Re-Auth starten
+    # STEP 0: Start reauthentication
     # ------------------------------------------------------------------
     async def async_step_reauth(self, user_input=None):
         """starts reauth, showing ui hint."""
