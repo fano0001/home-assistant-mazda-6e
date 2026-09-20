@@ -3,19 +3,18 @@ import uuid
 
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.core import callback
 from homeassistant.const import CONF_EMAIL, CONF_PASSWORD
 from homeassistant.helpers import aiohttp_client
 
 from .const import DOMAIN
 from .api import Mazda6EApi
+from .credential_crypto import encrypt_credential
 
 _LOGGER = logging.getLogger(__name__)
 
 STEP1_SCHEMA = vol.Schema({
     vol.Required(CONF_EMAIL): str,
-    vol.Required(CONF_PASSWORD): str,
-    vol.Required("deviceid", default=str(uuid.uuid4())): str})
+    vol.Required(CONF_PASSWORD): str})
 
 STEP3_SCHEMA = vol.Schema({
     vol.Required("verification_code"): str
@@ -34,29 +33,20 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self.reauth_entry = None  # <--- for Reauth
 
     # ------------------------------------------------------------------
-    # STEP 0: Re-Auth starten
+    # STEP 0: Start reauthentication
     # ------------------------------------------------------------------
     async def async_step_reauth(self, user_input=None):
         """starts reauth, showing ui hint."""
         self.reauth_entry = self._get_reauth_entry()
+        self.deviceid = self.reauth_entry.data.get("deviceid") or str(uuid.uuid4())
         return await self.async_step_reauth_confirm()
 
     async def async_step_reauth_confirm(self, user_input=None):
-        """reauth have to ask for E-Mail + Password + DeviceID again."""
+        """Ask for ordinary credentials, preserving the registered device."""
         if user_input is None:
             return self.async_show_form(
                 step_id="reauth_confirm",
-                data_schema=vol.Schema({
-                    vol.Required(CONF_EMAIL): str,
-                    vol.Required(CONF_PASSWORD): str,
-                    vol.Required(
-                        "deviceid",
-                        default=self.reauth_entry.data.get("deviceid"),
-                    ): str,
-                }),
-                description_placeholders={
-                    "email": self.reauth_entry.data.get("email_enc", "<unknown>")
-                }
+                data_schema=STEP1_SCHEMA,
             )
 
         return await self.async_step_user(user_input)
@@ -69,38 +59,43 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     # STEP 1: Login with mail + password
     # ------------------------------------------------------------------
     async def async_step_user(self, user_input=None):
-        """Step 1: Email + Password + DeviceID """
+        """Accept ordinary credentials and generate one device ID per flow."""
         if user_input is None:
             return self.async_show_form(step_id="user", data_schema=STEP1_SCHEMA)
 
-        self.api = Mazda6EApi(aiohttp_client.async_get_clientsession(self.hass), None, None, user_input["deviceid"])
+        if self.deviceid is None:
+            self.deviceid = str(uuid.uuid4())
+        self.api = Mazda6EApi(aiohttp_client.async_get_clientsession(self.hass), None, None, self.deviceid)
 
         try:
-            data = await self.api.login_email_password(
-                user_input[CONF_EMAIL],
-                user_input[CONF_PASSWORD]
-            )
-        except Exception as err:
-            _LOGGER.error("Login failed: %s", err)
+            if not user_input[CONF_EMAIL] or not user_input[CONF_PASSWORD]:
+                raise ValueError("Empty credentials")
+            self.email_enc = encrypt_credential(user_input[CONF_EMAIL])
+            password_enc = encrypt_credential(user_input[CONF_PASSWORD])
+            data = await self.api.login_email_password(self.email_enc, password_enc)
+            if not isinstance(data.get("emailVerify"), bool):
+                raise ValueError("Missing verification state")
+            if not all(isinstance(data.get(key), str) and data[key] for key in ("token", "refreshToken")):
+                raise ValueError("Incomplete token pair")
+        except Exception:
+            _LOGGER.error("Login failed")
             return self.async_show_form(
-                step_id="user",
+                step_id="reauth_confirm" if self.reauth_entry else "user",
                 data_schema=STEP1_SCHEMA,
                 errors={"base": "login_failed"},
             )
 
-        self.email_enc = user_input[CONF_EMAIL]
-        self.deviceid = user_input["deviceid"]
         self.token = data["token"]
+        if data["emailVerify"] is False:
+            return self._finish_login()
 
         try:
             await self.api.send_device_login(
                 self.token,
                 self.email_enc
             )
-        except Exception as ex:
-            _LOGGER.exception(
-                "Unknown error occurred during device login request: %s", ex
-            )
+        except Exception:
+            _LOGGER.error("Device login request failed")
             return self.async_abort(reason="device_login_failed")
 
         return await self.async_step_verify()
@@ -121,16 +116,18 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 self.email_enc,
                 code
             )
-        except Exception as ex:
-            _LOGGER.exception(
-                "Unknown error occurred during email verify request: %s", ex
-            )
+        except Exception:
+            _LOGGER.error("Email verification failed")
             return self.async_show_form(
                 step_id="verify",
                 data_schema=STEP3_SCHEMA,
                 errors={"base": "verification_failed"}
             )
 
+        return self._finish_login()
+
+    def _finish_login(self):
+        """Persist encrypted email and tokens only; never the password."""
         if self.reauth_entry:
             return self._handle_reauth_success()
 

@@ -8,11 +8,10 @@
     "step": {
       "user": {
         "data": {
-          "deviceid": "Device-ID (Eindeutiger Geräte-Schlüssel)",
-          "email": "Email (verschlüsselt)",
-          "password": "Passwort (verschlüsselt)"
+          "email": "Email",
+          "password": "Passwort"
         },
-        "description": "Bitte gib die verschlüsselten Login-Daten ein.",
+        "description": "Bitte gib deine Email und dein Passwort ein.",
         "title": "Mazda 6e Login"
       },
       "verify": {
@@ -21,7 +20,19 @@
         },
         "description": "Gib den Code ein, den du per Email erhalten hast.",
         "title": "Verifizierungscode"
+      },
+      "reauth_confirm": {
+        "data": {
+          "email": "Email",
+          "password": "Passwort"
+        },
+        "description": "Bitte melde dich erneut an.",
+        "title": "Mazda 6e Login"
       }
+    },
+    "abort": {
+      "device_login_failed": "Device login failed",
+      "reauth_successful": "Authentication updated"
     }
   },
   "entity": {

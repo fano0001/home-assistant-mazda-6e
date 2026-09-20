@@ -54,7 +54,7 @@ class Mazda6EApi:
 
             # try again once
             return await self._request(url, headers, body, retry=False)
-        raise Exception(f"Mazda API error: {raw}")
+        raise Exception("Mazda API request rejected")
 
     async def login_email_password(self, email_enc, password_enc):
         url = f"{BASE}/cma-app-auth/api/login/email-pass-in/v2"
@@ -101,7 +101,9 @@ class Mazda6EApi:
         }
         headers = {**HEADERS_BASE, "authorization": token, "deviceid": self.deviceid}
 
-        await self._request(url, headers, payload)
+        result = await self._request(url, headers, payload)
+        if result.get("data") is not True:
+            raise ValueError("Device verification was not confirmed")
         return True
 
     async def refresh_token(self):
@@ -112,8 +114,6 @@ class Mazda6EApi:
 
         async with self.session.post(url, headers=headers, json=body) as resp:
             raw = await resp.json()
-
-        _LOGGER.debug("refresh-token response: %s", raw)
 
         if not raw.get("success"):
             raise ConfigEntryAuthFailed("Token refresh failed")
