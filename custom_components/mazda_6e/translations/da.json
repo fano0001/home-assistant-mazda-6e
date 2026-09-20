@@ -1,0 +1,138 @@
+{
+  "config": {
+    "error": {
+      "device_login_failed": "Login på enhed mislykkedes",
+      "login_failed": "Login mislykkedes",
+      "verification_failed": "Ugyldig bekræftelseskode"
+    },
+    "step": {
+      "user": {
+        "data": {
+          "email": "E-mail",
+          "password": "Adgangskode"
+        },
+        "description": "Indtast e-mail og adgangskode til din Mazda-konto",
+        "title": "Mazda 6e-login"
+      },
+      "verify": {
+        "data": {
+          "verification_code": "Bekræftelseskode"
+        },
+        "description": "Indtast koden, du har modtaget via e-mail.",
+        "title": "Bekræftelseskode"
+      },
+      "reauth_confirm": {
+        "data": {
+          "email": "E-mail",
+          "password": "Adgangskode"
+        },
+        "description": "Log ind igen med din e-mail og adgangskode.",
+        "title": "Mazda 6e-login"
+      }
+    },
+    "abort": {
+      "device_login_failed": "Login på enhed mislykkedes",
+      "reauth_successful": "Godkendelse opdateret"
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "front_left_door": {
+        "name": "Førerdør"
+      },
+      "front_left_window": {
+        "name": "Førervindue"
+      },
+      "front_right_door": {
+        "name": "Passagerdør"
+      },
+      "front_right_window": {
+        "name": "Passagervindue"
+      },
+      "is_charging": {
+        "name": "Oplader"
+      },
+      "plugged_in": {
+        "name": "Tilsluttet"
+      },
+      "rear_left_door": {
+        "name": "Venstre bagdør"
+      },
+      "rear_left_window": {
+        "name": "Venstre bagrude"
+      },
+      "rear_right_door": {
+        "name": "Højre bagdør"
+      },
+      "rear_right_window": {
+        "name": "Højre bagrude"
+      },
+      "trunk": {
+        "name": "Bagagerum"
+      }
+    },
+    "sensor": {
+      "battery_state_of_charge": {
+        "name": "Ladeniveau"
+      },
+      "chargeCurrent": {
+        "name": "Aktuel ladeeffekt"
+      },
+      "chargeStatus": {
+        "name": "Opladningsstatus",
+        "state": {
+          "CHARGING": "Oplader",
+          "COMPLETED": "Færdig",
+          "NOT_CHARGING": "Oplader ikke",
+          "PAUSED": "Sat på pause",
+          "UNKNOWN": "Ukendt"
+        }
+      },
+      "front_left_tire_pressure": {
+        "name": "Dæktryk venstre forhjul"
+      },
+      "front_right_tire_pressure": {
+        "name": "Dæktryk højre forhjul"
+      },
+      "humidity_inside": {
+        "name": "Luftfugtighed"
+      },
+      "odometer": {
+        "name": "Kilometertæller"
+      },
+      "rear_left_tire_pressure": {
+        "name": "Dæktryk venstre baghjul"
+      },
+      "rear_right_tire_pressure": {
+        "name": "Dæktryk højre baghjul"
+      },
+      "remainChargeTime": {
+        "name": "Resterende ladetid"
+      },
+      "remaining_driving_range": {
+        "name": "Resterende rækkevidde"
+      },
+      "seat_status_front_left": {
+        "name": "Status for førersæde",
+        "state": {
+          "FAN": "Ventilation",
+          "HEATING": "Varme",
+          "OFF": "Slukket",
+          "UNKNOWN": "Ukendt"
+        }
+      },
+      "seat_status_front_right": {
+        "name": "Status for passagersæde",
+        "state": {
+          "FAN": "Ventilation",
+          "HEATING": "Varme",
+          "OFF": "Slukket",
+          "UNKNOWN": "Ukendt"
+        }
+      },
+      "temperature_inside": {
+        "name": "Kabinetemperatur"
+      }
+    }
+  }
+}
