@@ -11,7 +11,7 @@
           "email": "Email",
           "password": "Password"
         },
-        "description": "Enter your ordinary email and password. A device ID is generated automatically.",
+        "description": "Enter your email and password for your Mazda account",
         "title": "Mazda 6e Login"
       },
       "verify": {
