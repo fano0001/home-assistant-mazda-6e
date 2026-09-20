@@ -1,3 +1,6 @@
 /Mazda6e/
 /.idea/
 /requestResponse/
+__pycache__/
+*.pyc
+.pytest_cache/
