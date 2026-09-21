@@ -5,16 +5,31 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.const import CONF_EMAIL, CONF_PASSWORD
 from homeassistant.helpers import aiohttp_client
+from homeassistant.helpers.selector import TextSelector, TextSelectorConfig, TextSelectorType
 
-from .const import DOMAIN
+from .const import CONF_CONTROL_PIN, DOMAIN
 from .api import Mazda6EApi
-from .credential_crypto import encrypt_credential
+from .credential_crypto import encrypt_credential, generate_control_key_pair
 
 _LOGGER = logging.getLogger(__name__)
 
 STEP1_SCHEMA = vol.Schema({
     vol.Required(CONF_EMAIL): str,
+    vol.Required(CONF_PASSWORD): str,
+    vol.Optional(CONF_CONTROL_PIN): TextSelector(
+        TextSelectorConfig(type=TextSelectorType.PASSWORD)
+    )})
+
+REAUTH_SCHEMA = vol.Schema({
+    vol.Required(CONF_EMAIL): str,
     vol.Required(CONF_PASSWORD): str})
+
+RECONFIGURE_SCHEMA = vol.Schema({
+    vol.Required(CONF_EMAIL): str,
+    vol.Required(CONF_PASSWORD): str,
+    vol.Required(CONF_CONTROL_PIN): TextSelector(
+        TextSelectorConfig(type=TextSelectorType.PASSWORD)
+    )})
 
 STEP3_SCHEMA = vol.Schema({
     vol.Required("verification_code"): str
@@ -31,6 +46,10 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self.email_enc = None
         self.api = None
         self.reauth_entry = None  # <--- for Reauth
+        self.reconfigure_entry = None
+        self.control_public_key = None
+        self.control_private_key = None
+        self.control_pin = None
 
     # ------------------------------------------------------------------
     # STEP 0: Start reauthentication
@@ -39,6 +58,7 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """starts reauth, showing ui hint."""
         self.reauth_entry = self._get_reauth_entry()
         self.deviceid = self.reauth_entry.data.get("deviceid") or str(uuid.uuid4())
+        self.control_pin = self.reauth_entry.data.get(CONF_CONTROL_PIN)
         return await self.async_step_reauth_confirm()
 
     async def async_step_reauth_confirm(self, user_input=None):
@@ -46,7 +66,7 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is None:
             return self.async_show_form(
                 step_id="reauth_confirm",
-                data_schema=STEP1_SCHEMA,
+                data_schema=REAUTH_SCHEMA,
             )
 
         return await self.async_step_user(user_input)
@@ -54,6 +74,22 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     def _get_reauth_entry(self):
         """Helper function for Reauth."""
         return self.hass.config_entries.async_get_entry(self.context["entry_id"])
+
+    async def async_step_reconfigure(self, user_input=None):
+        """Update credentials required for cloud vehicle controls."""
+        if self.reconfigure_entry is None:
+            self.reconfigure_entry = self.hass.config_entries.async_get_entry(
+                self.context["entry_id"]
+            )
+            self.deviceid = self.reconfigure_entry.data.get("deviceid") or str(uuid.uuid4())
+
+        if user_input is None:
+            return self.async_show_form(
+                step_id="reconfigure",
+                data_schema=RECONFIGURE_SCHEMA,
+            )
+
+        return await self.async_step_user(user_input)
 
     # ------------------------------------------------------------------
     # STEP 1: Login with mail + password
@@ -65,11 +101,29 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         if self.deviceid is None:
             self.deviceid = str(uuid.uuid4())
-        self.api = Mazda6EApi(aiohttp_client.async_get_clientsession(self.hass), None, None, self.deviceid)
+        self.control_public_key, self.control_private_key = generate_control_key_pair()
+        self.api = Mazda6EApi(
+            aiohttp_client.async_get_clientsession(self.hass), None, None, self.deviceid,
+            self.control_public_key, self.control_private_key,
+        )
 
         try:
             if not user_input[CONF_EMAIL] or not user_input[CONF_PASSWORD]:
                 raise ValueError("Empty credentials")
+            if CONF_CONTROL_PIN in user_input:
+                self.control_pin = user_input[CONF_CONTROL_PIN]
+            if self.control_pin is not None and (
+                len(self.control_pin) != 6 or not self.control_pin.isdigit()
+            ):
+                return self.async_show_form(
+                    step_id="reconfigure" if self.reconfigure_entry else (
+                        "reauth_confirm" if self.reauth_entry else "user"
+                    ),
+                    data_schema=RECONFIGURE_SCHEMA if self.reconfigure_entry else (
+                        REAUTH_SCHEMA if self.reauth_entry else STEP1_SCHEMA
+                    ),
+                    errors={CONF_CONTROL_PIN: "invalid_control_pin"},
+                )
             self.email_enc = encrypt_credential(user_input[CONF_EMAIL])
             password_enc = encrypt_credential(user_input[CONF_PASSWORD])
             data = await self.api.login_email_password(self.email_enc, password_enc)
@@ -80,8 +134,12 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         except Exception:
             _LOGGER.error("Login failed")
             return self.async_show_form(
-                step_id="reauth_confirm" if self.reauth_entry else "user",
-                data_schema=STEP1_SCHEMA,
+                step_id="reconfigure" if self.reconfigure_entry else (
+                    "reauth_confirm" if self.reauth_entry else "user"
+                ),
+                data_schema=RECONFIGURE_SCHEMA if self.reconfigure_entry else (
+                    REAUTH_SCHEMA if self.reauth_entry else STEP1_SCHEMA
+                ),
                 errors={"base": "login_failed"},
             )
 
@@ -127,9 +185,9 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return self._finish_login()
 
     def _finish_login(self):
-        """Persist encrypted email and tokens only; never the password."""
-        if self.reauth_entry:
-            return self._handle_reauth_success()
+        """Persist the session and vehicle-control credentials."""
+        if self.reconfigure_entry or self.reauth_entry:
+            return self._handle_existing_entry_success()
 
         return self.async_create_entry(
             title="Mazda 6e",
@@ -137,27 +195,29 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 "token": self.token,
                 "refresh": self.api.refresh,
                 "email_enc": self.email_enc,
-                "deviceid": self.deviceid
+                "deviceid": self.deviceid,
+                "control_private_key": self.control_private_key,
+                CONF_CONTROL_PIN: self.control_pin,
             }
         )
 
-    # ------------------------------------------------------------------
-    #  finish Reauth
-    # ------------------------------------------------------------------
-    def _handle_reauth_success(self):
-        """update entry & finish Flow."""
+    def _handle_existing_entry_success(self):
+        """Update and reload an existing config entry."""
+        entry = self.reconfigure_entry or self.reauth_entry
         self.hass.config_entries.async_update_entry(
-            self.reauth_entry,
+            entry,
             data={
                 "token": self.token,
                 "refresh": self.api.refresh,
                 "email_enc": self.email_enc,
-                "deviceid": self.deviceid
-            }
+                "deviceid": self.deviceid,
+                "control_private_key": self.control_private_key,
+                CONF_CONTROL_PIN: self.control_pin,
+            },
         )
-
         self.hass.async_create_task(
-            self.hass.config_entries.async_reload(self.reauth_entry.entry_id)
+            self.hass.config_entries.async_reload(entry.entry_id)
         )
-
-        return self.async_abort(reason="reauth_successful")
+        return self.async_abort(
+            reason="reconfigure_successful" if self.reconfigure_entry else "reauth_successful"
+        )

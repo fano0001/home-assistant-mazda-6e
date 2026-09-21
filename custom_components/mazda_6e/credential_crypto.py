@@ -2,7 +2,7 @@
 
 import base64
 from cryptography.exceptions import UnsupportedAlgorithm
-from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
 
 
@@ -25,3 +25,52 @@ def encrypt_credential(value: str, public_key_b64: str = SERVER_PUBLIC_KEY) -> s
         return base64.encodebytes(encrypted).decode("ascii")
     except (ValueError, TypeError, UnsupportedAlgorithm):
         raise MazdaECryptoError("Credential encryption failed; check the key and input.") from None
+
+
+def generate_control_key_pair() -> tuple[str, str]:
+    """Generate the RSA key pair used to sign vehicle-control commands."""
+    private = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    public_der = private.public_key().public_bytes(
+        serialization.Encoding.DER, serialization.PublicFormat.SubjectPublicKeyInfo,
+    )
+    private_der = private.private_bytes(
+        serialization.Encoding.DER, serialization.PrivateFormat.PKCS8,
+        serialization.NoEncryption(),
+    )
+    return base64.encodebytes(public_der).decode(), base64.encodebytes(private_der).decode()
+
+
+def decrypt_control_serial(value_b64: str, private_key_b64: str) -> str:
+    """Decrypt a vehicle-control serial number with the registered private key."""
+    try:
+        key = serialization.load_der_private_key(
+            base64.b64decode("".join(private_key_b64.split()), validate=True), None,
+        )
+        if not isinstance(key, rsa.RSAPrivateKey) or key.key_size != 2048:
+            raise MazdaECryptoError("A 2048-bit RSA private key is required.")
+        return key.decrypt(
+            base64.b64decode("".join(value_b64.split()), validate=True),
+            padding.PKCS1v15(),
+        ).decode()
+    except (ValueError, TypeError, UnicodeError, UnsupportedAlgorithm):
+        raise MazdaECryptoError("Control serial decryption failed.") from None
+
+
+def sign_door_control(open_doors: bool, rc_token: str, serial_no: str,
+                      vehicle_id: int, private_key_b64: str) -> str:
+    """Sign a door-control request using Mazda's canonical field order."""
+    source = (
+        f"open={'true' if open_doors else 'false'}&rcToken={rc_token}"
+        f"&seriralNo={serial_no}&vehicleId={vehicle_id}"
+    )
+    try:
+        key = serialization.load_der_private_key(
+            base64.b64decode("".join(private_key_b64.split()), validate=True), None,
+        )
+        if not isinstance(key, rsa.RSAPrivateKey) or key.key_size != 2048:
+            raise MazdaECryptoError("A 2048-bit RSA private key is required.")
+        return base64.encodebytes(
+            key.sign(source.encode(), padding.PKCS1v15(), hashes.SHA256())
+        ).decode()
+    except (ValueError, TypeError, UnsupportedAlgorithm):
+        raise MazdaECryptoError("Door-control signing failed.") from None

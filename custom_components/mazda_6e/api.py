@@ -1,8 +1,10 @@
+import asyncio
 import aiohttp
 import time
 import logging
 
-from .const import PUB_KEY, DEVICE_NAME
+from .const import DEVICE_NAME
+from .credential_crypto import decrypt_control_serial, encrypt_credential, sign_door_control
 from .models import Mazda6eVehicle
 from homeassistant.exceptions import ConfigEntryAuthFailed
 
@@ -28,11 +30,16 @@ def now_ts():
 
 
 class Mazda6EApi:
-    def __init__(self, session: aiohttp.ClientSession, token=None, refresh=None, deviceid=None):
+    def __init__(self, session: aiohttp.ClientSession, token=None, refresh=None,
+                 deviceid=None, control_public_key=None, control_private_key=None,
+                 control_pin=None):
         self.session = session
         self.token = token
         self.refresh = refresh
         self.deviceid = deviceid
+        self.control_public_key = control_public_key
+        self.control_private_key = control_private_key
+        self.control_pin = control_pin
 
     async def _request(self, url: str, headers: dict, body: dict, retry: bool = True):
         """generic request method with token refresh handling"""
@@ -50,19 +57,21 @@ class Mazda6EApi:
             _LOGGER.debug("Token expired -> refreshing token...")
             await self.refresh_token()
 
-            headers = {**headers, "authorization": self.token}
+            headers["authorization"] = self.token
 
             # try again once
             return await self._request(url, headers, body, retry=False)
         raise Exception("Mazda API request rejected")
 
     async def login_email_password(self, email_enc, password_enc):
+        if not self.control_public_key:
+            raise ValueError("Missing control public key")
         url = f"{BASE}/cma-app-auth/api/login/email-pass-in/v2"
         payload = {
             "loginTime": now_ts(),
             "email": email_enc,
             "password": password_enc,
-            "pubKey": PUB_KEY
+            "pubKey": self.control_public_key
         }
         headers = {**HEADERS_BASE, "deviceid": self.deviceid}
 
@@ -173,3 +182,64 @@ class Mazda6EApi:
 
         raw = await self._request(url, headers, body)
         return raw.get("data")
+
+    async def async_unlock(self, vehicle_id: int):
+        """Unlock the vehicle doors through Mazda cloud control."""
+        return await self._async_door_control(vehicle_id, open_doors=True)
+
+    async def async_lock(self, vehicle_id: int):
+        """Lock the vehicle doors through Mazda cloud control."""
+        return await self._async_door_control(vehicle_id, open_doors=False)
+
+    async def _async_door_control(self, vehicle_id: int, *, open_doors: bool):
+        """Authorize, submit, and poll a signed door-control command."""
+        if not self.control_private_key:
+            raise ConfigEntryAuthFailed("Sign in again to register a control key")
+        if not self.control_pin:
+            raise ConfigEntryAuthFailed("Sign in again to register the control passcode")
+        headers = {**HEADERS_BASE, "authorization": self.token, "deviceid": self.deviceid}
+
+        checked = await self._request(
+            f"{BASE}/cma-app-car-control/api/security-code/check-code", headers,
+            {"safeCode": encrypt_credential(self.control_pin)},
+        )
+        checked_data = checked.get("data")
+        if not isinstance(checked_data, dict) or not isinstance(checked_data.get("rcToken"), str):
+            raise ValueError("Control passcode response omitted rcToken")
+        rc_token = checked_data["rcToken"]
+
+        serial_response = await self._request(
+            f"{BASE}/cma-app-car-control/api/serial-no/get", headers, {"type": "1"},
+        )
+        encrypted_serial = serial_response.get("data")
+        if not isinstance(encrypted_serial, str):
+            raise ValueError("Serial response omitted data")
+        serial_no = decrypt_control_serial(encrypted_serial, self.control_private_key)
+        signature = sign_door_control(
+            open_doors, rc_token, serial_no, vehicle_id, self.control_private_key,
+        )
+        submitted = await self._request(
+            f"{BASE}/cma-app-car-control/api/control/doors", headers,
+            {"command": "lock", "open": open_doors, "rcToken": rc_token,
+             "seriralNo": serial_no, "sign": signature, "vehicleId": str(vehicle_id)},
+        )
+        submitted_data = submitted.get("data")
+        if not isinstance(submitted_data, dict) or not isinstance(submitted_data.get("commandId"), str):
+            raise ValueError("Door response omitted commandId")
+        command_id = submitted_data["commandId"]
+
+        for _ in range(15):
+            result = await self._request(
+                f"{BASE}/cma-app-car-control/api/control/control-result", headers,
+                {"commandId": command_id, "vehicleId": str(vehicle_id)},
+            )
+            data = result.get("data")
+            if not isinstance(data, dict) or type(data.get("resultCode")) is not int:
+                raise ValueError("Unknown door-control result")
+            result_code = data["resultCode"]
+            if result_code == 0 or (not open_doors and result_code == 1015):
+                return data
+            if result_code != -100:
+                raise RuntimeError(f"Door control failed with result code {result_code}")
+            await asyncio.sleep(1)
+        raise TimeoutError("Door control remained in PROCESSING state")

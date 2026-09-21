@@ -7,11 +7,12 @@ from homeassistant.const import Platform
 from homeassistant.exceptions import ConfigEntryAuthFailed
 
 from .api import Mazda6EApi
-from .const import DOMAIN
+from .const import CONF_CONTROL_PIN, DOMAIN
 from .coordinator import Mazda6eCoordinator
 
 PLATFORMS = [
     Platform.BINARY_SENSOR,
+    Platform.LOCK,
     Platform.SENSOR,
 ]
 
@@ -26,6 +27,8 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
         config_entry.data["token"],
         config_entry.data["refresh"],
         config_entry.data["deviceid"],
+        control_private_key=config_entry.data.get("control_private_key"),
+        control_pin=config_entry.data.get(CONF_CONTROL_PIN),
     )
 
     coordinator = Mazda6eCoordinator(hass, config_entry, mazda6e_api)

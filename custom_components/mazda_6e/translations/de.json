@@ -2,6 +2,7 @@
   "config": {
     "error": {
       "device_login_failed": "Geräte-Anmeldung fehlgeschlagen",
+      "invalid_control_pin": "Der Steuercode muss aus sechs Ziffern bestehen",
       "login_failed": "Anmeldung fehlgeschlagen",
       "verification_failed": "Falscher Code"
     },
@@ -9,7 +10,11 @@
       "user": {
         "data": {
           "email": "Email",
-          "password": "Passwort"
+          "password": "Passwort",
+          "control_pin": "Steuercode (optional)"
+        },
+        "data_description": {
+          "control_pin": "Der sechsstellige Code für die Cloud-Steuerung. Er kann später über Neu konfigurieren hinzugefügt werden."
         },
         "description": "Bitte gib deine Email und dein Passwort ein.",
         "title": "Mazda 6e Login"
@@ -28,14 +33,32 @@
         },
         "description": "Bitte melde dich erneut an.",
         "title": "Mazda 6e Login"
+      },
+      "reconfigure": {
+        "data": {
+          "email": "Email",
+          "password": "Passwort",
+          "control_pin": "Steuercode"
+        },
+        "data_description": {
+          "control_pin": "Der sechsstellige Code für die Fahrzeugsteuerung über die Cloud."
+        },
+        "description": "Gib deine Mazda-Zugangsdaten und den Steuercode ein.",
+        "title": "Cloud-Steuerung konfigurieren"
       }
     },
     "abort": {
       "device_login_failed": "Device login failed",
+      "reconfigure_successful": "Cloud-Steuerungsdaten aktualisiert",
       "reauth_successful": "Authentication updated"
     }
   },
   "entity": {
+    "lock": {
+      "doors": {
+        "name": "Türen"
+      }
+    },
     "binary_sensor": {
       "front_left_door": {
         "name": "Fahrertür"
