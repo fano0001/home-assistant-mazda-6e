@@ -8,7 +8,7 @@ from homeassistant.helpers import aiohttp_client
 from homeassistant.helpers.selector import TextSelector, TextSelectorConfig, TextSelectorType
 
 from .const import CONF_CONTROL_PIN, DOMAIN
-from .api import Mazda6EApi
+from .api import Mazda6EApi, MazdaLoginError
 from .credential_crypto import encrypt_credential, generate_control_key_pair
 
 _LOGGER = logging.getLogger(__name__)
@@ -99,6 +99,12 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is None:
             return self.async_show_form(step_id="user", data_schema=STEP1_SCHEMA)
 
+        step_id = "reconfigure" if self.reconfigure_entry else (
+            "reauth_confirm" if self.reauth_entry else "user"
+        )
+        data_schema = RECONFIGURE_SCHEMA if self.reconfigure_entry else (
+            REAUTH_SCHEMA if self.reauth_entry else STEP1_SCHEMA
+        )
         if self.deviceid is None:
             self.deviceid = str(uuid.uuid4())
         self.control_public_key, self.control_private_key = generate_control_key_pair()
@@ -116,12 +122,8 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 len(self.control_pin) != 6 or not self.control_pin.isdigit()
             ):
                 return self.async_show_form(
-                    step_id="reconfigure" if self.reconfigure_entry else (
-                        "reauth_confirm" if self.reauth_entry else "user"
-                    ),
-                    data_schema=RECONFIGURE_SCHEMA if self.reconfigure_entry else (
-                        REAUTH_SCHEMA if self.reauth_entry else STEP1_SCHEMA
-                    ),
+                    step_id=step_id,
+                    data_schema=data_schema,
                     errors={CONF_CONTROL_PIN: "invalid_control_pin"},
                 )
             self.email_enc = encrypt_credential(user_input[CONF_EMAIL])
@@ -131,15 +133,18 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 raise ValueError("Missing verification state")
             if not all(isinstance(data.get(key), str) and data[key] for key in ("token", "refreshToken")):
                 raise ValueError("Incomplete token pair")
+        except MazdaLoginError as err:
+            _LOGGER.error("Login failed with Mazda response code %s", err.code)
+            return self.async_show_form(
+                step_id=step_id,
+                data_schema=data_schema,
+                errors={"base": "login_failed"},
+            )
         except Exception:
             _LOGGER.error("Login failed")
             return self.async_show_form(
-                step_id="reconfigure" if self.reconfigure_entry else (
-                    "reauth_confirm" if self.reauth_entry else "user"
-                ),
-                data_schema=RECONFIGURE_SCHEMA if self.reconfigure_entry else (
-                    REAUTH_SCHEMA if self.reauth_entry else STEP1_SCHEMA
-                ),
+                step_id=step_id,
+                data_schema=data_schema,
                 errors={"base": "login_failed"},
             )
 

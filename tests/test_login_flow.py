@@ -47,6 +47,7 @@ def module(monkeypatch):
         "token": "synthetic-token", "refreshToken": "synthetic-refresh", "emailVerify": True,
     }), send_device_login=AsyncMock(), verify_device_code=AsyncMock())
     modules["login_test.api"].Mazda6EApi = Mock(return_value=api)
+    modules["login_test.api"].MazdaLoginError = type("MazdaLoginError", (Exception,), {})
     for name, value in modules.items():
         monkeypatch.setitem(sys.modules, name, value)
     for name in ("credential_crypto", "config_flow"):
