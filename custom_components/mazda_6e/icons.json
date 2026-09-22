@@ -1,5 +1,10 @@
 {
   "entity": {
+    "number": {
+      "charge_limit": {
+        "default": "mdi:battery-charging-80"
+      }
+    },
     "sensor": {
       "battery_state_of_charge": {
         "default": "mdi:battery-unknown",

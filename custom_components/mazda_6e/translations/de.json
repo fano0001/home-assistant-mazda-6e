@@ -64,6 +64,11 @@
     }
   },
   "entity": {
+    "number": {
+      "charge_limit": {
+        "name": "Ladelimit"
+      }
+    },
     "binary_sensor": {
       "air_conditioning": {
         "name": "Klimaanlage"

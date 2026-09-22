@@ -64,6 +64,11 @@
     }
   },
   "entity": {
+    "number": {
+      "charge_limit": {
+        "name": "Charge limit"
+      }
+    },
     "binary_sensor": {
       "air_conditioning": {
         "name": "Air conditioning"

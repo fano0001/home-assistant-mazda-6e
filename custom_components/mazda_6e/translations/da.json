@@ -64,6 +64,11 @@
     }
   },
   "entity": {
+    "number": {
+      "charge_limit": {
+        "name": "Opladningsgrænse"
+      }
+    },
     "binary_sensor": {
       "front_left_door": {
         "name": "Førerdør"

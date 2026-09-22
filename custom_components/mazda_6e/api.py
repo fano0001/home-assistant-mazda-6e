@@ -304,6 +304,67 @@ class Mazda6EApi:
         """Lock the vehicle doors through Mazda cloud control."""
         return await self._async_door_control(vehicle_id, open_doors=False)
 
+    async def async_set_charge_limit(self, vehicle_id: int, charge_limit: int):
+        """Set the vehicle target state of charge."""
+        if type(charge_limit) is not int or not 60 <= charge_limit <= 100:
+            raise ValueError("Charge limit must be a whole percentage from 60 to 100")
+        if not self.control_private_key:
+            raise ConfigEntryAuthFailed("Sign in again to register a control key")
+
+        for attempt in range(2):
+            try:
+                return await self._async_set_charge_limit_once(vehicle_id, charge_limit)
+            except RuntimeError as err:
+                if str(err) != "Control failed with result code 1000":
+                    raise
+                status = await self.async_get_vehicle_status(vehicle_id)
+                if (status or {}).get("charge", {}).get("maxSocPercent") == charge_limit:
+                    return {"resultCode": 1000, "errorMsg": "Requested charge limit is active"}
+                if attempt == 1:
+                    raise
+
+    async def _async_set_charge_limit_once(self, vehicle_id: int, charge_limit: int):
+        """Submit one charge-limit command and wait for its result."""
+        headers = {**HEADERS_BASE, "authorization": self.token, "deviceid": self.deviceid}
+        serial_response = await self._request(
+            f"{base_url(self.region)}/cma-app-car-control/api/serial-no/get",
+            headers,
+            {"type": "2"},
+        )
+        encrypted_serial = serial_response.get("data")
+        if not isinstance(encrypted_serial, str):
+            raise ValueError("Serial response omitted data")
+
+        payload = {
+            "chargePercentageMax": charge_limit,
+            "command": "charge_max",
+            "rcToken": "",
+            "seriralNo": decrypt_control_serial(encrypted_serial, self.control_private_key),
+            "vehicleId": str(vehicle_id),
+        }
+        submitted = await self._request(
+            f"{base_url(self.region)}/cma-app-car-control/api/charge/percentage",
+            headers,
+            {
+                **payload,
+                "sign": sign_control_payload(
+                    payload,
+                    self.control_private_key,
+                    omit_keys={"command", "rcToken"},
+                ),
+            },
+        )
+        submitted_data = submitted.get("data")
+        if not isinstance(submitted_data, dict) or not isinstance(submitted_data.get("commandId"), str):
+            raise ValueError("Charge-limit response omitted commandId")
+
+        return await self._async_wait_for_control_result(
+            headers,
+            vehicle_id,
+            submitted_data["commandId"],
+            allow_already_locked=False,
+        )
+
     async def _async_door_control(self, vehicle_id: int, *, open_doors: bool):
         """Authorize, submit, and poll a signed door-control command."""
         if not self.control_private_key:

@@ -17,6 +17,7 @@ PLATFORMS = [
     Platform.COVER,
     Platform.DEVICE_TRACKER,
     Platform.LOCK,
+    Platform.NUMBER,
     Platform.SENSOR,
     Platform.SELECT,
     Platform.SWITCH,
