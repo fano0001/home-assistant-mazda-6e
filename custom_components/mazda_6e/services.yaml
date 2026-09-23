@@ -1,0 +1,25 @@
+security_code_status:
+  name: Security code status
+  description: Query the backend status for the vehicle security code.
+  fields:
+    vehicle_id:
+      name: Vehicle ID
+      description: Optional numeric vehicle ID. If omitted, all configured vehicles are checked.
+      example: 123456
+      selector:
+        number:
+          min: 1
+          mode: box
+
+validate_security_code:
+  name: Validate encrypted security code
+  description: Validate the stored encrypted security code and fetch backend token data.
+  fields:
+    vehicle_id:
+      name: Vehicle ID
+      description: Optional numeric vehicle ID. If omitted, all configured vehicles are checked.
+      example: 123456
+      selector:
+        number:
+          min: 1
+          mode: box

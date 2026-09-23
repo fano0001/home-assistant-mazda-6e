@@ -11,15 +11,24 @@ from homeassistant.components.sensor import (
     SensorStateClass
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import UnitOfLength, PERCENTAGE, UnitOfPressure, UnitOfSpeed, UnitOfElectricCurrent, UnitOfTime, UnitOfTemperature
+from homeassistant.const import (
+    CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
+    PERCENTAGE,
+    UnitOfElectricCurrent,
+    UnitOfLength,
+    UnitOfPressure,
+    UnitOfSpeed,
+    UnitOfTemperature,
+    UnitOfTime,
+)
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
-from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 
 from .const import DOMAIN
-from .helpers.validators import speed_value, temperature
-from .models import Mazda6eVehicle, ChargeStatus, SeatStatusMode
+from .entity import Mazda6eEntity
+from .helpers.validators import remaining_charge_time, speed_value, temperature, timestamp_ms
+from .models import Mazda6eVehicle, ChargeStatus, PowerStatus, SeatStatusMode, VehicleStatus
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -29,6 +38,50 @@ class Mazda6eSensorDescription(SensorEntityDescription):
     """Description of a Mazda 6e Sensor."""
     value_fn: Callable[[dict[str, Any]], Any]
     attrs_fn: Callable[[dict], dict] | None = None
+
+
+_SEAT_KEYS = {
+    "front_left": "leftFront",
+    "front_right": "rightFront",
+    "rear_left": "leftBack",
+    "rear_right": "rightBack",
+}
+
+# tires use the same left/right, front/back naming as the seats
+_TIRE_KEYS = _SEAT_KEYS
+
+
+def _seat(position: str) -> Mazda6eSensorDescription:
+    return Mazda6eSensorDescription(
+        key=f"seat_status_{position}",
+        translation_key=f"seat_status_{position}",
+        device_class=SensorDeviceClass.ENUM,
+        options=[e.name for e in SeatStatusMode],
+        value_fn=lambda data, p=_SEAT_KEYS[position]: SeatStatusMode.safe_name(
+            data["status"]["seat"][p]["mode"]
+        ),
+        attrs_fn=lambda data, p=_SEAT_KEYS[position]: {
+            "level": data["status"]["seat"][p].get("level"),
+            "heat_status": data["status"]["seat"][p].get("heatStatus"),
+            "vent_status": data["status"]["seat"][p].get("ventStatus"),
+        },
+    )
+
+
+def _tire_pressure(position: str) -> Mazda6eSensorDescription:
+    return Mazda6eSensorDescription(
+        key=f"{position}_tire_pressure",
+        translation_key=f"{position}_tire_pressure",
+        icon="mdi:car-tire-alert",
+        native_unit_of_measurement=UnitOfPressure.KPA,
+        suggested_unit_of_measurement=UnitOfPressure.BAR,
+        device_class=SensorDeviceClass.PRESSURE,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data, p=_TIRE_KEYS[position]: data["status"]["tire"][p]["pressure"],
+        attrs_fn=lambda data, p=_TIRE_KEYS[position]: {
+            "status": data["status"]["tire"][p].get("status"),
+        },
+    )
 
 
 SENSOR_TYPES: tuple[Mazda6eSensorDescription, ...] = (
@@ -59,45 +112,15 @@ SENSOR_TYPES: tuple[Mazda6eSensorDescription, ...] = (
         value_fn=lambda data: data["status"]["vehicleStatus"]["totalMileage"],
     ),
     Mazda6eSensorDescription(
-        key="front_left_tire_pressure",
-        translation_key="front_left_tire_pressure",
-        icon="mdi:car-tire-alert",
-        native_unit_of_measurement=UnitOfPressure.KPA,
-        device_class=SensorDeviceClass.PRESSURE,
-        suggested_unit_of_measurement=UnitOfPressure.BAR,
+        key="speed",
+        translation_key="speed",
+        icon="mdi:speedometer",
+        native_unit_of_measurement=UnitOfSpeed.KILOMETERS_PER_HOUR,
+        device_class=SensorDeviceClass.SPEED,
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda data: data["status"]["tire"]["leftFront"]["pressure"],
+        value_fn=speed_value,
     ),
-    Mazda6eSensorDescription(
-        key="front_right_tire_pressure",
-        translation_key="front_right_tire_pressure",
-        icon="mdi:car-tire-alert",
-        native_unit_of_measurement=UnitOfPressure.KPA,
-        suggested_unit_of_measurement=UnitOfPressure.BAR,
-        device_class=SensorDeviceClass.PRESSURE,
-        state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda data: data["status"]["tire"]["rightFront"]["pressure"],
-    ),
-    Mazda6eSensorDescription(
-        key="rear_left_tire_pressure",
-        translation_key="rear_left_tire_pressure",
-        icon="mdi:car-tire-alert",
-        native_unit_of_measurement=UnitOfPressure.KPA,
-        suggested_unit_of_measurement=UnitOfPressure.BAR,
-        device_class=SensorDeviceClass.PRESSURE,
-        state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda data: data["status"]["tire"]["leftBack"]["pressure"],
-    ),
-    Mazda6eSensorDescription(
-        key="rear_right_tire_pressure",
-        translation_key="rear_right_tire_pressure",
-        icon="mdi:car-tire-alert",
-        native_unit_of_measurement=UnitOfPressure.KPA,
-        suggested_unit_of_measurement=UnitOfPressure.BAR,
-        device_class=SensorDeviceClass.PRESSURE,
-        state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda data: data["status"]["tire"]["rightBack"]["pressure"],
-    ),
+    *(_tire_pressure(position) for position in _TIRE_KEYS),
     Mazda6eSensorDescription(
         key="chargeCurrent",
         translation_key="chargeCurrent",
@@ -108,13 +131,41 @@ SENSOR_TYPES: tuple[Mazda6eSensorDescription, ...] = (
         value_fn=lambda data: data["status"]["charge"]["chargeCurrent"],
     ),
     Mazda6eSensorDescription(
+        key="ac_charge_current",
+        translation_key="ac_charge_current",
+        icon="mdi:current-ac",
+        native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
+        device_class=SensorDeviceClass.CURRENT,
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_registry_enabled_default=False,
+        value_fn=lambda data: data["status"]["charge"]["acChargeCurrent"],
+    ),
+    Mazda6eSensorDescription(
+        key="dc_charge_current",
+        translation_key="dc_charge_current",
+        icon="mdi:current-dc",
+        native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
+        device_class=SensorDeviceClass.CURRENT,
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_registry_enabled_default=False,
+        value_fn=lambda data: data["status"]["charge"]["dcChargeCurrent"],
+    ),
+    Mazda6eSensorDescription(
+        key="charge_target_soc",
+        translation_key="charge_target_soc",
+        icon="mdi:battery-charging-high",
+        native_unit_of_measurement=PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: data["status"]["charge"]["maxSocPercent"],
+    ),
+    Mazda6eSensorDescription(
         key="remainChargeTime",
         translation_key="remainChargeTime",
         icon="mdi:progress-clock",
         native_unit_of_measurement=UnitOfTime.MINUTES,
         device_class=SensorDeviceClass.DURATION,
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda data: data["status"]["charge"]["remainChargeTime"],
+        value_fn=lambda data: remaining_charge_time(data["status"]["charge"]["remainChargeTime"]),
     ),
     Mazda6eSensorDescription(
         key="chargeStatus",
@@ -124,30 +175,7 @@ SENSOR_TYPES: tuple[Mazda6eSensorDescription, ...] = (
         options=[e.name for e in ChargeStatus],
         value_fn=lambda data: ChargeStatus.safe_name(data["status"]["charge"].get("chargeStatus"))
     ),
-    Mazda6eSensorDescription(
-        key="seat_status_front_left",
-        translation_key="seat_status_front_left",
-        device_class=SensorDeviceClass.ENUM,
-        options=[e.name for e in SeatStatusMode],
-        value_fn=lambda data: SeatStatusMode.safe_name(data["status"]["seat"]['leftFront']['mode']),
-        attrs_fn=lambda data: {
-            "level": data["status"]["seat"]["leftFront"]["level"],
-            "heat_status": data["status"]["seat"]["leftFront"]["heatStatus"],
-            "vent_status": data["status"]["seat"]["leftFront"]["ventStatus"]
-        }
-    ),
-    Mazda6eSensorDescription(
-        key="seat_status_front_right",
-        translation_key="seat_status_front_right",
-        device_class=SensorDeviceClass.ENUM,
-        options=[e.name for e in SeatStatusMode],
-        value_fn=lambda data: SeatStatusMode.safe_name(data["status"]["seat"]['rightFront']['mode']),
-        attrs_fn=lambda data: {
-            "level": data["status"]["seat"]["rightFront"]["level"],
-            "heat_status": data["status"]["seat"]["rightFront"]["heatStatus"],
-            "vent_status": data["status"]["seat"]["rightFront"]["ventStatus"]
-        }
-    ),
+    *(_seat(position) for position in _SEAT_KEYS),
     Mazda6eSensorDescription(
         key="temperature_inside",
         translation_key="temperature_inside",
@@ -158,6 +186,24 @@ SENSOR_TYPES: tuple[Mazda6eSensorDescription, ...] = (
         value_fn=lambda data: temperature(data["status"]["hvac"]['insideTemp'])
     ),
     Mazda6eSensorDescription(
+        key="temperature_cockpit",
+        translation_key="temperature_cockpit",
+        icon="mdi:thermometer-lines",
+        device_class=SensorDeviceClass.TEMPERATURE,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: temperature(data["status"]["hvac"]["consTempCockpit"]),
+    ),
+    Mazda6eSensorDescription(
+        key="temperature_target",
+        translation_key="temperature_target",
+        icon="mdi:thermostat",
+        device_class=SensorDeviceClass.TEMPERATURE,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: temperature(data["status"]["hvac"]["remoteTemp"]),
+    ),
+    Mazda6eSensorDescription(
         key="humidity_inside",
         translation_key="humidity_inside",
         icon="mdi:water-percent",
@@ -165,7 +211,49 @@ SENSOR_TYPES: tuple[Mazda6eSensorDescription, ...] = (
         native_unit_of_measurement=PERCENTAGE,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda data: data["status"]["hvac"]['insideHumidity']
-    )
+    ),
+    Mazda6eSensorDescription(
+        key="pm25_inside",
+        translation_key="pm25_inside",
+        device_class=SensorDeviceClass.PM25,
+        native_unit_of_measurement=CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: data["status"]["hvac"]["insidePm25"],
+    ),
+    Mazda6eSensorDescription(
+        key="power_status",
+        translation_key="power_status",
+        icon="mdi:power",
+        device_class=SensorDeviceClass.ENUM,
+        options=[e.name for e in PowerStatus],
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: PowerStatus.safe_name(data["status"]["vehicleStatus"]["powerStatus"]),
+    ),
+    Mazda6eSensorDescription(
+        key="vehicle_status",
+        translation_key="vehicle_status",
+        icon="mdi:car-info",
+        device_class=SensorDeviceClass.ENUM,
+        options=[e.name for e in VehicleStatus],
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: VehicleStatus.safe_name(data["status"]["vehicleStatus"]["status"]),
+    ),
+    Mazda6eSensorDescription(
+        key="vehicle_status_code",
+        translation_key="vehicle_status_code",
+        icon="mdi:code-tags",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: data["status"]["vehicleStatus"]["status"],
+    ),
+    Mazda6eSensorDescription(
+        key="last_updated",
+        translation_key="last_updated",
+        icon="mdi:clock-outline",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: timestamp_ms(data["status"]["lastUpdatedAt"]),
+    ),
 )
 
 
@@ -182,15 +270,16 @@ async def async_setup_entry(
 
         for description in SENSOR_TYPES:
             try:
-                description.value_fn(data)
+                value = description.value_fn(data)
             except Exception:
+                continue
+            if description.key == "speed" and value is None:
                 continue
 
             entities.append(
                 Mazda6eSensor(
                     coordinator=coordinator,
                     vehicle=vehicle,
-                    vehicle_id=f"{vehicle.vehicle_id}",
                     description=description,
                 )
             )
@@ -198,39 +287,10 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class Mazda6eSensor(CoordinatorEntity, SensorEntity):
+class Mazda6eSensor(Mazda6eEntity, SensorEntity):
     """Mazda 6e base sensor."""
 
-    _attr_has_entity_name = True
     entity_description: Mazda6eSensorDescription
-
-    def __init__(
-            self,
-            coordinator,
-            vehicle: Mazda6eVehicle,
-            vehicle_id: str,
-            description: Mazda6eSensorDescription,
-    ):
-        super().__init__(coordinator)
-        self.entity_description = description
-        self.vehicle = vehicle
-        self.vehicle_id = vehicle_id
-
-        _LOGGER.debug("Mazda6eSensor: '%s', '%s'", self.entity_description, self.vehicle)
-
-        self._attr_unique_id = f"{vehicle.vehicle_id}_{description.key}"
-
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, vehicle_id)},
-            name=f"Mazda 6e - {vehicle.vehicle_id}",
-            serial_number=vehicle.vin,
-            manufacturer="Mazda",
-            model="6e",
-        )
-
-    @property
-    def vehicle_data(self) -> dict | None:
-        return self.coordinator.data.get(self.vehicle.vehicle_id)
 
     @property
     def native_value(self):
@@ -251,16 +311,17 @@ class Mazda6eSensor(CoordinatorEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> dict:
         """Return extra attributes for the sensor."""
+        attributes = self.vehicle_attributes
+
         if not self.entity_description.attrs_fn:
-            return {}
+            return attributes
 
         try:
-            data = self.coordinator.data[self.vehicle.vehicle_id]
-            return self.entity_description.attrs_fn(data)
+            attributes.update(self.entity_description.attrs_fn(self.vehicle_data))
         except Exception as err:
             _LOGGER.debug(
                 "Failed to compute attributes for %s: %s",
                 self.entity_id,
                 err,
             )
-            return {}
+        return attributes

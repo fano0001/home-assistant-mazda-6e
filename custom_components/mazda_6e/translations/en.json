@@ -59,7 +59,62 @@
         "name": "Doors"
       }
     },
+    "button": {
+      "find_vehicle": {
+        "name": "Find vehicle"
+      },
+      "honk_horn": {
+        "name": "Honk horn"
+      }
+    },
+    "climate": {
+      "cabin_climate": {
+        "name": "Cabin climate"
+      }
+    },
+    "cover": {
+      "trunk": {
+        "name": "Trunk"
+      },
+      "windows": {
+        "name": "Windows"
+      }
+    },
+    "switch": {
+      "front_defrost": {
+        "name": "Front defrost"
+      },
+      "steering_wheel_heat": {
+        "name": "Steering wheel heat"
+      }
+    },
+    "select": {
+      "driver_seat_heat": {
+        "name": "Driver seat heat"
+      },
+      "passenger_seat_heat": {
+        "name": "Passenger seat heat"
+      },
+      "driver_seat_ventilation": {
+        "name": "Driver seat ventilation"
+      },
+      "passenger_seat_ventilation": {
+        "name": "Passenger seat ventilation"
+      }
+    },
     "binary_sensor": {
+      "air_conditioning": {
+        "name": "Air conditioning"
+      },
+      "dc_plugged_in": {
+        "name": "DC plugged in"
+      },
+      "defrost": {
+        "name": "Defrost"
+      },
+      "driver_lock": {
+        "name": "Driver door lock"
+      },
       "front_left_door": {
         "name": "Driver door"
       },
@@ -72,11 +127,29 @@
       "front_right_window": {
         "name": "Passenger window"
       },
+      "high_beam": {
+        "name": "High beam"
+      },
       "is_charging": {
         "name": "Is charging"
       },
+      "left_turn_signal": {
+        "name": "Left turn signal"
+      },
+      "low_beam": {
+        "name": "Low beam"
+      },
+      "online": {
+        "name": "Online"
+      },
+      "passenger_lock": {
+        "name": "Passenger door lock"
+      },
       "plugged_in": {
         "name": "Plugged in"
+      },
+      "position_lamp": {
+        "name": "Position lamp"
       },
       "rear_left_door": {
         "name": "Rear left door"
@@ -90,16 +163,51 @@
       "rear_right_window": {
         "name": "Rear right window"
       },
+      "right_turn_signal": {
+        "name": "Right turn signal"
+      },
+      "steering_wheel_heater": {
+        "name": "Steering wheel heater"
+      },
       "trunk": {
         "name": "Trunk"
       }
     },
+    "device_tracker": {
+      "location": {
+        "name": "Location"
+      }
+    },
     "sensor": {
+      "ac_charge_current": {
+        "name": "AC charge current"
+      },
       "battery_state_of_charge": {
         "name": "Charge level"
       },
+      "charge_target_soc": {
+        "name": "Charge limit"
+      },
       "chargeCurrent": {
-        "name": "Current charge power"
+        "name": "Charging current"
+      },
+      "dc_charge_current": {
+        "name": "DC charge current"
+      },
+      "last_updated": {
+        "name": "Last updated"
+      },
+      "pm25_inside": {
+        "name": "Inside PM2.5"
+      },
+      "power_status": {
+        "name": "Power status",
+        "state": {
+          "ACCESSORY": "Accessory",
+          "OFF": "Off",
+          "ON": "On",
+          "UNKNOWN": "Unknown"
+        }
       },
       "chargeStatus": {
         "name": "Charge status",
@@ -135,6 +243,9 @@
       "remaining_driving_range": {
         "name": "Remaining range"
       },
+      "speed": {
+        "name": "Speed"
+      },
       "seat_status_front_left": {
         "name": "Driver seat status",
         "state": {
@@ -153,8 +264,42 @@
           "UNKNOWN": "Unknown"
         }
       },
+      "seat_status_rear_left": {
+        "name": "Rear left seat status",
+        "state": {
+          "FAN": "Fan",
+          "HEATING": "Heating",
+          "OFF": "Off",
+          "UNKNOWN": "Unknown"
+        }
+      },
+      "seat_status_rear_right": {
+        "name": "Rear right seat status",
+        "state": {
+          "FAN": "Fan",
+          "HEATING": "Heating",
+          "OFF": "Off",
+          "UNKNOWN": "Unknown"
+        }
+      },
       "temperature_inside": {
         "name": "Inside temperature"
+      },
+      "temperature_target": {
+        "name": "Target temperature"
+      },
+      "temperature_cockpit": {
+        "name": "Cockpit temperature"
+      },
+      "vehicle_status": {
+        "name": "Vehicle status",
+        "state": {
+          "PARKED": "Parked",
+          "UNKNOWN": "Unknown"
+        }
+      },
+      "vehicle_status_code": {
+        "name": "Vehicle status code"
       }
     }
   }
