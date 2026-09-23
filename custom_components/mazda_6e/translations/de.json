@@ -2,7 +2,7 @@
   "config": {
     "error": {
       "device_login_failed": "Geräte-Anmeldung fehlgeschlagen",
-      "invalid_control_pin": "Der Steuercode muss aus sechs Ziffern bestehen",
+      "invalid_control_pin": "Der Kontroll-Passcode muss aus sechs Ziffern bestehen",
       "login_failed": "Anmeldung fehlgeschlagen",
       "verification_failed": "Falscher Code"
     },
@@ -11,7 +11,7 @@
         "data": {
           "email": "Email",
           "password": "Passwort",
-          "control_pin": "Steuercode (optional)"
+          "control_pin": "Kontroll-Passcode (optional)"
         },
         "data_description": {
           "control_pin": "Der sechsstellige Code für die Cloud-Steuerung. Er kann später über Neu konfigurieren hinzugefügt werden."
@@ -43,7 +43,7 @@
         "data_description": {
           "control_pin": "Der sechsstellige Code für die Fahrzeugsteuerung über die Cloud."
         },
-        "description": "Gib deine Mazda-Zugangsdaten und den Steuercode ein.",
+        "description": "Gib deine Mazda-Zugangsdaten und den Kontroll-Passcode ein.",
         "title": "Cloud-Steuerung konfigurieren"
       }
     },
@@ -108,7 +108,7 @@
           "COMPLETED": "Abgeschlossen",
           "NOT_CHARGING": "Läd nicht",
           "PAUSED": "Pausiert",
-          "UNKNOWN": "Unebkannt"
+          "UNKNOWN": "Unbekannt"
         }
       },
       "front_left_tire_pressure": {
