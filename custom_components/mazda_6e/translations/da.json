@@ -57,6 +57,9 @@
     "lock": {
       "doors": {
         "name": "Døre"
+      },
+      "trunk": {
+        "name": "Bagagerum"
       }
     },
     "binary_sensor": {
