@@ -294,6 +294,7 @@
       "vehicle_status": {
         "name": "Fahrzeugstatus",
         "state": {
+          "DRIVING": "Fahren",
           "PARKED": "Geparkt",
           "UNKNOWN": "Unbekannt"
         }
