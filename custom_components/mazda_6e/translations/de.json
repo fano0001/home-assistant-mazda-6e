@@ -67,12 +67,12 @@
         "name": "Fahrzeug finden"
       },
       "honk_horn": {
-        "name": "Hupe"
+        "name": "Hupen"
       }
     },
     "climate": {
       "cabin_climate": {
-        "name": "Innenraumklima"
+        "name": "Klimaanlage"
       }
     },
     "cover": {
@@ -110,7 +110,7 @@
         "name": "DC-Ladekabel angeschlossen"
       },
       "defrost": {
-        "name": "Defrost"
+        "name": "Enteisen"
       },
       "driver_lock": {
         "name": "Verriegelung Fahrerseite"
