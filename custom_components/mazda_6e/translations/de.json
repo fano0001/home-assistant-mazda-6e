@@ -1,5 +1,10 @@
 {
   "config": {
+    "abort": {
+      "device_login_failed": "Device login failed",
+      "reauth_successful": "Authentication updated",
+      "reconfigure_successful": "Cloud-Steuerungsdaten aktualisiert"
+    },
     "error": {
       "device_login_failed": "Geräte-Anmeldung fehlgeschlagen",
       "invalid_control_pin": "Der Kontroll-Passcode muss aus sechs Ziffern bestehen",
@@ -7,11 +12,41 @@
       "verification_failed": "Falscher Code"
     },
     "step": {
-      "user": {
+      "reauth_confirm": {
         "data": {
           "email": "Email",
+          "password": "Passwort"
+        },
+        "description": "Bitte melde dich erneut an.",
+        "title": "Mazda 6e Login"
+      },
+      "reconfigure": {
+        "data": {
+          "control_pin": "Steuercode",
+          "email": "Email",
           "password": "Passwort",
-          "control_pin": "Kontroll-Passcode (optional)"
+          "region": "Region"
+        },
+        "data_description": {
+          "control_pin": "Der sechsstellige Code für die Fahrzeugsteuerung über die Cloud."
+        },
+        "description": "Gib deine Mazda-Zugangsdaten und den Kontroll-Passcode ein.",
+        "title": "Cloud-Steuerung konfigurieren"
+      },
+      "selector": {
+        "region": {
+          "options": {
+            "asia": "Asien",
+            "europe": "Europa"
+          }
+        }
+      },
+      "user": {
+        "data": {
+          "control_pin": "Kontroll-Passcode (optional)",
+          "email": "Email",
+          "password": "Passwort",
+          "region": "Region"
         },
         "data_description": {
           "control_pin": "Der sechsstellige Code für die Cloud-Steuerung. Er kann später über Neu konfigurieren hinzugefügt werden."
@@ -25,83 +60,10 @@
         },
         "description": "Gib den Code ein, den du per Email erhalten hast.",
         "title": "Verifizierungscode"
-      },
-      "reauth_confirm": {
-        "data": {
-          "email": "Email",
-          "password": "Passwort"
-        },
-        "description": "Bitte melde dich erneut an.",
-        "title": "Mazda 6e Login"
-      },
-      "reconfigure": {
-        "data": {
-          "email": "Email",
-          "password": "Passwort",
-          "control_pin": "Steuercode"
-        },
-        "data_description": {
-          "control_pin": "Der sechsstellige Code für die Fahrzeugsteuerung über die Cloud."
-        },
-        "description": "Gib deine Mazda-Zugangsdaten und den Kontroll-Passcode ein.",
-        "title": "Cloud-Steuerung konfigurieren"
       }
-    },
-    "abort": {
-      "device_login_failed": "Device login failed",
-      "reconfigure_successful": "Cloud-Steuerungsdaten aktualisiert",
-      "reauth_successful": "Authentication updated"
     }
   },
   "entity": {
-    "lock": {
-      "doors": {
-        "name": "Türen"
-      },
-      "trunk": {
-        "name": "Kofferraum"
-      }
-    },
-    "button": {
-      "find_vehicle": {
-        "name": "Fahrzeug finden"
-      },
-      "honk_horn": {
-        "name": "Hupen"
-      }
-    },
-    "climate": {
-      "cabin_climate": {
-        "name": "Klimaanlage"
-      }
-    },
-    "cover": {
-      "windows": {
-        "name": "Fenster"
-      }
-    },
-    "switch": {
-      "front_defrost": {
-        "name": "Frontscheibenenteisung"
-      },
-      "steering_wheel_heat": {
-        "name": "Lenkradheizung"
-      }
-    },
-    "select": {
-      "driver_seat_heat": {
-        "name": "Fahrersitzheizung"
-      },
-      "passenger_seat_heat": {
-        "name": "Beifahrersitzheizung"
-      },
-      "driver_seat_ventilation": {
-        "name": "Fahrersitzbelüftung"
-      },
-      "passenger_seat_ventilation": {
-        "name": "Beifahrersitzbelüftung"
-      }
-    },
     "binary_sensor": {
       "air_conditioning": {
         "name": "Klimaanlage"
@@ -173,9 +135,49 @@
         "name": "Kofferraum"
       }
     },
+    "button": {
+      "find_vehicle": {
+        "name": "Fahrzeug finden"
+      },
+      "honk_horn": {
+        "name": "Hupen"
+      }
+    },
+    "climate": {
+      "cabin_climate": {
+        "name": "Klimaanlage"
+      }
+    },
+    "cover": {
+      "windows": {
+        "name": "Fenster"
+      }
+    },
     "device_tracker": {
       "location": {
         "name": "Position"
+      }
+    },
+    "lock": {
+      "doors": {
+        "name": "Türen"
+      },
+      "trunk": {
+        "name": "Kofferraum"
+      }
+    },
+    "select": {
+      "driver_seat_heat": {
+        "name": "Fahrersitzheizung"
+      },
+      "driver_seat_ventilation": {
+        "name": "Fahrersitzbelüftung"
+      },
+      "passenger_seat_heat": {
+        "name": "Beifahrersitzheizung"
+      },
+      "passenger_seat_ventilation": {
+        "name": "Beifahrersitzbelüftung"
       }
     },
     "sensor": {
@@ -185,17 +187,39 @@
       "battery_state_of_charge": {
         "name": "Batterieladestand"
       },
-      "charge_target_soc": {
-        "name": "Ladelimit"
-      },
       "chargeCurrent": {
         "name": "Ladestrom"
+      },
+      "chargeStatus": {
+        "name": "Ladestatus",
+        "state": {
+          "CHARGING": "Lädt",
+          "COMPLETED": "Abgeschlossen",
+          "NOT_CHARGING": "Läd nicht",
+          "PAUSED": "Pausiert",
+          "UNKNOWN": "Unbekannt"
+        }
+      },
+      "charge_target_soc": {
+        "name": "Ladelimit"
       },
       "dc_charge_current": {
         "name": "DC-Ladestrom"
       },
+      "front_left_tire_pressure": {
+        "name": "Reifendruck vorne links"
+      },
+      "front_right_tire_pressure": {
+        "name": "Reifendruck vorne rechts"
+      },
+      "humidity_inside": {
+        "name": "Luftfeuchtigkeit"
+      },
       "last_updated": {
         "name": "Zuletzt aktualisiert"
+      },
+      "odometer": {
+        "name": "Kilometerstand"
       },
       "pm25_inside": {
         "name": "Feinstaub innen"
@@ -209,28 +233,6 @@
           "UNKNOWN": "Unbekannt"
         }
       },
-      "chargeStatus": {
-        "name": "Ladestatus",
-        "state": {
-          "CHARGING": "Lädt",
-          "COMPLETED": "Abgeschlossen",
-          "NOT_CHARGING": "Läd nicht",
-          "PAUSED": "Pausiert",
-          "UNKNOWN": "Unbekannt"
-        }
-      },
-      "front_left_tire_pressure": {
-        "name": "Reifendruck vorne links"
-      },
-      "front_right_tire_pressure": {
-        "name": "Reifendruck vorne rechts"
-      },
-      "humidity_inside": {
-        "name": "Luftfeuchtigkeit"
-      },
-      "odometer": {
-        "name": "Kilometerstand"
-      },
       "rear_left_tire_pressure": {
         "name": "Reifendruck hinten links"
       },
@@ -242,9 +244,6 @@
       },
       "remaining_driving_range": {
         "name": "Verbleibende Reichweite"
-      },
-      "speed": {
-        "name": "Geschwindigkeit"
       },
       "seat_status_front_left": {
         "name": "Fahrersitz status",
@@ -282,14 +281,17 @@
           "UNKNOWN": "Unbekannt"
         }
       },
+      "speed": {
+        "name": "Geschwindigkeit"
+      },
+      "temperature_cockpit": {
+        "name": "Cockpittemperatur"
+      },
       "temperature_inside": {
         "name": "Innenraumtemperatur"
       },
       "temperature_target": {
         "name": "Zieltemperatur"
-      },
-      "temperature_cockpit": {
-        "name": "Cockpittemperatur"
       },
       "vehicle_status": {
         "name": "Fahrzeugstatus",
@@ -301,6 +303,14 @@
       },
       "vehicle_status_code": {
         "name": "Fahrzeugstatuscode"
+      }
+    },
+    "switch": {
+      "front_defrost": {
+        "name": "Frontscheibenenteisung"
+      },
+      "steering_wheel_heat": {
+        "name": "Lenkradheizung"
       }
     }
   }
