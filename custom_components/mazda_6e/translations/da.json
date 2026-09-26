@@ -1,5 +1,10 @@
 {
   "config": {
+    "abort": {
+      "device_login_failed": "Login på enhed mislykkedes",
+      "reauth_successful": "Godkendelse opdateret",
+      "reconfigure_successful": "Oplysningerne til cloudstyring er opdateret"
+    },
     "error": {
       "device_login_failed": "Login på enhed mislykkedes",
       "invalid_control_pin": "Kontrolkoden skal bestå af seks cifre",
@@ -7,11 +12,41 @@
       "verification_failed": "Ugyldig bekræftelseskode"
     },
     "step": {
-      "user": {
+      "reauth_confirm": {
         "data": {
           "email": "E-mail",
+          "password": "Adgangskode"
+        },
+        "description": "Log ind igen med din e-mail og adgangskode.",
+        "title": "Mazda 6e-login"
+      },
+      "reconfigure": {
+        "data": {
+          "control_pin": "Kontrolkode",
+          "email": "E-mail",
           "password": "Adgangskode",
-          "control_pin": "Kontrolkode (valgfri)"
+          "region": "Region"
+        },
+        "data_description": {
+          "control_pin": "Den sekscifrede kode til fjernstyring af bilen via cloud."
+        },
+        "description": "Indtast oplysningerne til din Mazda-konto og kontrolkoden til cloudstyring.",
+        "title": "Konfigurer cloudstyring"
+      },
+      "selector": {
+        "region": {
+          "options": {
+            "asia": "Asien",
+            "europe": "Europa"
+          }
+        }
+      },
+      "user": {
+        "data": {
+          "control_pin": "Kontrolkode (valgfri)",
+          "email": "E-mail",
+          "password": "Adgangskode",
+          "region": "Region"
         },
         "data_description": {
           "control_pin": "Den sekscifrede kode til fjernstyring via cloud. Den kan også tilføjes senere via Omkonfigurer."
@@ -25,40 +60,10 @@
         },
         "description": "Indtast koden, du har modtaget via e-mail.",
         "title": "Bekræftelseskode"
-      },
-      "reauth_confirm": {
-        "data": {
-          "email": "E-mail",
-          "password": "Adgangskode"
-        },
-        "description": "Log ind igen med din e-mail og adgangskode.",
-        "title": "Mazda 6e-login"
-      },
-      "reconfigure": {
-        "data": {
-          "email": "E-mail",
-          "password": "Adgangskode",
-          "control_pin": "Kontrolkode"
-        },
-        "data_description": {
-          "control_pin": "Den sekscifrede kode til fjernstyring af bilen via cloud."
-        },
-        "description": "Indtast oplysningerne til din Mazda-konto og kontrolkoden til cloudstyring.",
-        "title": "Konfigurer cloudstyring"
       }
-    },
-    "abort": {
-      "device_login_failed": "Login på enhed mislykkedes",
-      "reconfigure_successful": "Oplysningerne til cloudstyring er opdateret",
-      "reauth_successful": "Godkendelse opdateret"
     }
   },
   "entity": {
-    "lock": {
-      "doors": {
-        "name": "Døre"
-      }
-    },
     "binary_sensor": {
       "front_left_door": {
         "name": "Førerdør"
@@ -92,6 +97,11 @@
       },
       "trunk": {
         "name": "Bagagerum"
+      }
+    },
+    "lock": {
+      "doors": {
+        "name": "Døre"
       }
     },
     "sensor": {

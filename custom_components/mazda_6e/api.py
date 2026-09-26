@@ -3,14 +3,12 @@ import aiohttp
 import time
 import logging
 
-from .const import DEVICE_NAME
+from .const import DEVICE_NAME, REGION_EUROPE, REGION_ASIA, BASE_EU, BASE_ASIA
 from .credential_crypto import decrypt_control_serial, encrypt_credential, sign_door_control
 from .models import Mazda6eVehicle
 from homeassistant.exceptions import ConfigEntryAuthFailed
 
 _LOGGER = logging.getLogger(__name__)
-
-BASE = "https://cma-m.iov.changanauto.com.de/cma-app-gw"
 
 HEADERS_BASE = {
     "content-type": "application/json",
@@ -38,10 +36,18 @@ def now_ts():
     return str(int(time.time()))
 
 
+def base_url(region):
+    if region == REGION_EUROPE:
+        return BASE_EU
+    if region == REGION_ASIA:
+        return BASE_ASIA
+    raise ValueError(f"Unsupported region: {region}")
+
+
 class Mazda6EApi:
     def __init__(self, session: aiohttp.ClientSession, token=None, refresh=None,
                  deviceid=None, control_public_key=None, control_private_key=None,
-                 control_pin=None):
+                 control_pin=None, region=None):
         self.session = session
         self.token = token
         self.refresh = refresh
@@ -49,6 +55,7 @@ class Mazda6EApi:
         self.control_public_key = control_public_key
         self.control_private_key = control_private_key
         self.control_pin = control_pin
+        self.region = region
 
     async def _request(self, url: str, headers: dict, body: dict, retry: bool = True):
         """generic request method with token refresh handling"""
@@ -75,7 +82,7 @@ class Mazda6EApi:
     async def login_email_password(self, email_enc, password_enc):
         if not self.control_public_key:
             raise ValueError("Missing control public key")
-        url = f"{BASE}/cma-app-auth/api/login/email-pass-in/v2"
+        url = f"{base_url(self.region)}/cma-app-auth/api/login/email-pass-in/v2"
         payload = {
             "loginTime": now_ts(),
             "email": email_enc,
@@ -95,7 +102,7 @@ class Mazda6EApi:
             return data["data"]
 
     async def send_device_login(self, token, email_enc):
-        url = f"{BASE}/cma-app-user/api/send-email/device-login/send"
+        url = f"{base_url(self.region)}/cma-app-user/api/send-email/device-login/send"
         payload = {
             "email": email_enc,
             "deviceName": DEVICE_NAME,
@@ -108,7 +115,7 @@ class Mazda6EApi:
         return True
 
     async def verify_device_code(self, token, email_enc, code):
-        url = f"{BASE}/cma-app-user/api/login-device/email-verify"
+        url = f"{base_url(self.region)}/cma-app-user/api/login-device/email-verify"
         payload = {
             "authCode": code,
             "email": email_enc,
@@ -125,7 +132,7 @@ class Mazda6EApi:
         return True
 
     async def refresh_token(self):
-        url = f"{BASE}/cma-app-auth/api/auth/refresh-token"
+        url = f"{base_url(self.region)}/cma-app-auth/api/auth/refresh-token"
         headers = {**HEADERS_BASE, "authorization": self.token}
 
         body = {"refreshToken": self.refresh}
@@ -141,7 +148,7 @@ class Mazda6EApi:
         return self.token
 
     async def async_get_vehicles(self) -> list[Mazda6eVehicle]:
-        url = f"{BASE}/cma-app-user/api/vehicle/vehicles"
+        url = f"{base_url(self.region)}/cma-app-user/api/vehicle/vehicles"
         headers = {
             **HEADERS_BASE,
             "authorization": self.token,
@@ -162,7 +169,7 @@ class Mazda6EApi:
         return vehicles
 
     async def async_get_vehicle_status(self, vehicle_id: int):
-        url = f"{BASE}/cma-app-car-condition/api/vehicle/condition/v2"
+        url = f"{base_url(self.region)}/cma-app-car-condition/api/vehicle/condition/v2"
         headers = {
             **HEADERS_BASE,
             "authorization": self.token,
@@ -209,7 +216,7 @@ class Mazda6EApi:
         headers = {**HEADERS_BASE, "authorization": self.token, "deviceid": self.deviceid}
 
         checked = await self._request(
-            f"{BASE}/cma-app-car-control/api/security-code/check-code", headers,
+            f"{base_url(self.region)}/cma-app-car-control/api/security-code/check-code", headers,
             {"safeCode": encrypt_credential(self.control_pin)},
         )
         checked_data = checked.get("data")
@@ -218,7 +225,7 @@ class Mazda6EApi:
         rc_token = checked_data["rcToken"]
 
         serial_response = await self._request(
-            f"{BASE}/cma-app-car-control/api/serial-no/get", headers, {"type": "1"},
+            f"{base_url(self.region)}/cma-app-car-control/api/serial-no/get", headers, {"type": "1"},
         )
         encrypted_serial = serial_response.get("data")
         if not isinstance(encrypted_serial, str):
@@ -228,7 +235,7 @@ class Mazda6EApi:
             open_doors, rc_token, serial_no, vehicle_id, self.control_private_key,
         )
         submitted = await self._request(
-            f"{BASE}/cma-app-car-control/api/control/doors", headers,
+            f"{base_url(self.region)}/cma-app-car-control/api/control/doors", headers,
             {"command": "lock", "open": open_doors, "rcToken": rc_token,
              "seriralNo": serial_no, "sign": signature, "vehicleId": str(vehicle_id)},
         )
@@ -239,7 +246,7 @@ class Mazda6EApi:
 
         for _ in range(15):
             result = await self._request(
-                f"{BASE}/cma-app-car-control/api/control/control-result", headers,
+                f"{base_url(self.region)}/cma-app-car-control/api/control/control-result", headers,
                 {"commandId": command_id, "vehicleId": str(vehicle_id)},
             )
             data = result.get("data")

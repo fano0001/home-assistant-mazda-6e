@@ -3,11 +3,11 @@ import uuid
 
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.const import CONF_EMAIL, CONF_PASSWORD
+from homeassistant.const import CONF_EMAIL, CONF_PASSWORD, CONF_REGION
 from homeassistant.helpers import aiohttp_client
-from homeassistant.helpers.selector import TextSelector, TextSelectorConfig, TextSelectorType
+from homeassistant.helpers.selector import TextSelector, TextSelectorConfig, TextSelectorType, SelectSelector, SelectSelectorConfig
 
-from .const import CONF_CONTROL_PIN, DOMAIN
+from .const import CONF_CONTROL_PIN, DOMAIN, REGION_EUROPE, REGION_ASIA
 from .api import Mazda6EApi, MazdaLoginError
 from .credential_crypto import encrypt_credential, generate_control_key_pair
 
@@ -16,6 +16,15 @@ _LOGGER = logging.getLogger(__name__)
 STEP1_SCHEMA = vol.Schema({
     vol.Required(CONF_EMAIL): str,
     vol.Required(CONF_PASSWORD): str,
+    vol.Required(CONF_REGION, default=REGION_EUROPE): SelectSelector(
+        SelectSelectorConfig(
+            options=[
+                REGION_EUROPE,
+                REGION_ASIA,
+            ],
+            mode="dropdown",
+        )
+    ),
     vol.Optional(CONF_CONTROL_PIN): TextSelector(
         TextSelectorConfig(type=TextSelectorType.PASSWORD)
     )})
@@ -27,6 +36,15 @@ REAUTH_SCHEMA = vol.Schema({
 RECONFIGURE_SCHEMA = vol.Schema({
     vol.Required(CONF_EMAIL): str,
     vol.Required(CONF_PASSWORD): str,
+    vol.Required(CONF_REGION, default=REGION_EUROPE): SelectSelector(
+        SelectSelectorConfig(
+            options=[
+                REGION_EUROPE,
+                REGION_ASIA,
+            ],
+            mode="dropdown",
+        )
+    ),
     vol.Required(CONF_CONTROL_PIN): TextSelector(
         TextSelectorConfig(type=TextSelectorType.PASSWORD)
     )})
@@ -50,6 +68,7 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self.control_public_key = None
         self.control_private_key = None
         self.control_pin = None
+        self.region = None
 
     # ------------------------------------------------------------------
     # STEP 0: Start reauthentication
@@ -59,6 +78,7 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self.reauth_entry = self._get_reauth_entry()
         self.deviceid = self.reauth_entry.data.get("deviceid") or str(uuid.uuid4())
         self.control_pin = self.reauth_entry.data.get(CONF_CONTROL_PIN)
+        self.region = self.reauth_entry.data.get(CONF_REGION, REGION_EUROPE)
         return await self.async_step_reauth_confirm()
 
     async def async_step_reauth_confirm(self, user_input=None):
@@ -107,10 +127,11 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         )
         if self.deviceid is None:
             self.deviceid = str(uuid.uuid4())
+        self.region = user_input.get(CONF_REGION, self.region)
         self.control_public_key, self.control_private_key = generate_control_key_pair()
         self.api = Mazda6EApi(
             aiohttp_client.async_get_clientsession(self.hass), None, None, self.deviceid,
-            self.control_public_key, self.control_private_key,
+            self.control_public_key, self.control_private_key, region=self.region
         )
 
         try:
@@ -119,7 +140,7 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             if CONF_CONTROL_PIN in user_input:
                 self.control_pin = user_input[CONF_CONTROL_PIN]
             if self.control_pin is not None and (
-                len(self.control_pin) != 6 or not self.control_pin.isdigit()
+                    len(self.control_pin) != 6 or not self.control_pin.isdigit()
             ):
                 return self.async_show_form(
                     step_id=step_id,
@@ -203,6 +224,7 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 "deviceid": self.deviceid,
                 "control_private_key": self.control_private_key,
                 CONF_CONTROL_PIN: self.control_pin,
+                CONF_REGION: self.region
             }
         )
 
@@ -218,6 +240,7 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 "deviceid": self.deviceid,
                 "control_private_key": self.control_private_key,
                 CONF_CONTROL_PIN: self.control_pin,
+                CONF_REGION: self.region
             },
         )
         self.hass.async_create_task(

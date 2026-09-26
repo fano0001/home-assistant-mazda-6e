@@ -3,11 +3,11 @@ import logging
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import aiohttp_client
-from homeassistant.const import Platform
+from homeassistant.const import Platform, CONF_REGION
 from homeassistant.exceptions import ConfigEntryAuthFailed
 
 from .api import Mazda6EApi
-from .const import CONF_CONTROL_PIN, DOMAIN
+from .const import CONF_CONTROL_PIN, DOMAIN, REGION_EUROPE, REGION_ASIA
 from .coordinator import Mazda6eCoordinator
 
 PLATFORMS = [
@@ -29,6 +29,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
         config_entry.data["deviceid"],
         control_private_key=config_entry.data.get("control_private_key"),
         control_pin=config_entry.data.get(CONF_CONTROL_PIN),
+        region=config_entry.data.get(CONF_REGION, REGION_EUROPE)
     )
 
     coordinator = Mazda6eCoordinator(hass, config_entry, mazda6e_api)

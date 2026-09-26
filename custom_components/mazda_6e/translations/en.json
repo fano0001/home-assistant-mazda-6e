@@ -1,5 +1,10 @@
 {
   "config": {
+    "abort": {
+      "device_login_failed": "Device login failed",
+      "reauth_successful": "Authentication updated",
+      "reconfigure_successful": "Cloud-control credentials updated"
+    },
     "error": {
       "device_login_failed": "Device login failed",
       "invalid_control_pin": "The control passcode must contain six digits",
@@ -7,11 +12,41 @@
       "verification_failed": "Bad verification code"
     },
     "step": {
-      "user": {
+      "reauth_confirm": {
         "data": {
           "email": "Email",
+          "password": "Password"
+        },
+        "description": "Sign in again with your email and password.",
+        "title": "Mazda 6e Login"
+      },
+      "reconfigure": {
+        "data": {
+          "control_pin": "Control passcode",
+          "email": "Email",
           "password": "Password",
-          "control_pin": "Control passcode (optional)"
+          "region": "Region"
+        },
+        "data_description": {
+          "control_pin": "The six-digit passcode used for cloud vehicle controls."
+        },
+        "description": "Enter your Mazda credentials and cloud-control passcode.",
+        "title": "Configure cloud controls"
+      },
+      "selector": {
+        "region": {
+          "options": {
+            "asia": "Asia",
+            "europe": "Europe"
+          }
+        }
+      },
+      "user": {
+        "data": {
+          "control_pin": "Control passcode (optional)",
+          "email": "Email",
+          "password": "Password",
+          "region": "Region"
         },
         "data_description": {
           "control_pin": "The six-digit passcode used for cloud vehicle controls. It can also be added later through Reconfigure."
@@ -25,40 +60,10 @@
         },
         "description": "Enter the code you received by email.",
         "title": "Verification Code"
-      },
-      "reauth_confirm": {
-        "data": {
-          "email": "Email",
-          "password": "Password"
-        },
-        "description": "Sign in again with your email and password.",
-        "title": "Mazda 6e Login"
-      },
-      "reconfigure": {
-        "data": {
-          "email": "Email",
-          "password": "Password",
-          "control_pin": "Control passcode"
-        },
-        "data_description": {
-          "control_pin": "The six-digit passcode used for cloud vehicle controls."
-        },
-        "description": "Enter your Mazda credentials and cloud-control passcode.",
-        "title": "Configure cloud controls"
       }
-    },
-    "abort": {
-      "device_login_failed": "Device login failed",
-      "reconfigure_successful": "Cloud-control credentials updated",
-      "reauth_successful": "Authentication updated"
     }
   },
   "entity": {
-    "lock": {
-      "doors": {
-        "name": "Doors"
-      }
-    },
     "binary_sensor": {
       "front_left_door": {
         "name": "Driver door"
@@ -92,6 +97,11 @@
       },
       "trunk": {
         "name": "Trunk"
+      }
+    },
+    "lock": {
+      "doors": {
+        "name": "Doors"
       }
     },
     "sensor": {
