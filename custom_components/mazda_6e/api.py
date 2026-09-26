@@ -236,7 +236,7 @@ class Mazda6EApi:
         return await self._async_door_control(vehicle_id, open_doors=True)
 
     async def async_set_air_conditioner(
-        self, vehicle_id: int, enabled: bool, target_temp: float, run_time: int = 15,
+            self, vehicle_id: int, enabled: bool, target_temp: float, run_time: int = 15,
     ):
         """Set remote cabin climate using Mazda's signed cloud-control endpoint."""
         return await self._async_signed_control(
@@ -287,7 +287,7 @@ class Mazda6EApi:
         return await self._async_signed_control(vehicle_id, "steering-wheel/heat", {"open": enabled})
 
     async def async_set_seat_mode(
-        self, vehicle_id: int, control: str, position: str, enabled: bool, level: int,
+            self, vehicle_id: int, control: str, position: str, enabled: bool, level: int,
     ):
         """Set a captured front-seat heat or ventilation mode."""
         if position not in ("master", "copilot"):
@@ -346,7 +346,7 @@ class Mazda6EApi:
         )
 
     async def _async_signed_control(
-        self, vehicle_id: int, control_name: str, payload: dict, *, allow_already_satisfied: bool = False,
+            self, vehicle_id: int, control_name: str, payload: dict, *, allow_already_satisfied: bool = False,
     ):
         """Submit and poll a captured signed Mazda control command."""
         if not self.control_private_key:
@@ -354,7 +354,7 @@ class Mazda6EApi:
 
         headers = {**HEADERS_BASE, "authorization": self.token, "deviceid": self.deviceid}
         serial_response = await self._request(
-            f"{BASE}/cma-app-car-control/api/serial-no/get", headers, {"type": "1"},
+            f"{base_url(self.region)}/cma-app-car-control/api/serial-no/get", headers, {"type": "1"},
         )
         encrypted_serial = serial_response.get("data")
         if not isinstance(encrypted_serial, str):
@@ -378,7 +378,7 @@ class Mazda6EApi:
         )
 
     async def _async_protected_control(
-        self, vehicle_id: int, control_name: str, payload: dict,
+            self, vehicle_id: int, control_name: str, payload: dict,
     ):
         """Submit a command that requires a freshly authorized control passcode."""
         if not self.control_private_key:
@@ -421,7 +421,7 @@ class Mazda6EApi:
         )
 
     async def _async_submit_signed_control(
-        self, headers: dict, control_name: str, payload: dict, *, sign_omit_keys: set[str] | None = None,
+            self, headers: dict, control_name: str, payload: dict, *, sign_omit_keys: set[str] | None = None,
     ):
         signed_payload = {
             **payload,
@@ -430,11 +430,11 @@ class Mazda6EApi:
             ),
         }
         return await self._request(
-            f"{BASE}/cma-app-car-control/api/control/{control_name}", headers, signed_payload,
+            f"{base_url(self.region)}/cma-app-car-control/api/control/{control_name}", headers, signed_payload,
         )
 
     async def _async_wait_for_control_result(
-        self, headers: dict, vehicle_id: int, command_id: str, *, allow_already_locked: bool,
+            self, headers: dict, vehicle_id: int, command_id: str, *, allow_already_locked: bool,
     ):
         """Poll a command until Mazda accepts or rejects it."""
 

@@ -64,14 +64,6 @@
     }
   },
   "entity": {
-    "lock": {
-      "doors": {
-        "name": "Døre"
-      },
-      "trunk": {
-        "name": "Bagagerum"
-      }
-    },
     "binary_sensor": {
       "front_left_door": {
         "name": "Førerdør"
@@ -102,6 +94,14 @@
       },
       "rear_right_window": {
         "name": "Højre bagrude"
+      },
+      "trunk": {
+        "name": "Bagagerum"
+      }
+    },
+    "lock": {
+      "doors": {
+        "name": "Døre"
       },
       "trunk": {
         "name": "Bagagerum"
