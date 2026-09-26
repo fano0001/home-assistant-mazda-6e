@@ -64,7 +64,67 @@
     }
   },
   "entity": {
+    "lock": {
+      "doors": {
+        "name": "Türen"
+      },
+      "trunk": {
+        "name": "Kofferraum"
+      }
+    },
+    "button": {
+      "find_vehicle": {
+        "name": "Fahrzeug finden"
+      },
+      "honk_horn": {
+        "name": "Hupen"
+      }
+    },
+    "climate": {
+      "cabin_climate": {
+        "name": "Klimaanlage"
+      }
+    },
+    "cover": {
+      "windows": {
+        "name": "Fenster"
+      }
+    },
+    "switch": {
+      "front_defrost": {
+        "name": "Frontscheibenenteisung"
+      },
+      "steering_wheel_heat": {
+        "name": "Lenkradheizung"
+      }
+    },
+    "select": {
+      "driver_seat_heat": {
+        "name": "Fahrersitzheizung"
+      },
+      "passenger_seat_heat": {
+        "name": "Beifahrersitzheizung"
+      },
+      "driver_seat_ventilation": {
+        "name": "Fahrersitzbelüftung"
+      },
+      "passenger_seat_ventilation": {
+        "name": "Beifahrersitzbelüftung"
+      }
+    },
     "binary_sensor": {
+      "air_conditioning": {
+        "name": "Klimaanlage"
+      },
+      "dc_plugged_in": {
+        "name": "DC-Ladekabel angeschlossen"
+      },
+      "defrost": {
+        "name": "Enteisen"
+      },
+      "driver_lock": {
+        "name": "Verriegelung Fahrerseite"
+      },
       "front_left_door": {
         "name": "Fahrertür"
       },
@@ -77,11 +137,29 @@
       "front_right_window": {
         "name": "Beifahrerfenster"
       },
+      "high_beam": {
+        "name": "Fernlicht"
+      },
       "is_charging": {
         "name": "Lädt gerade"
       },
+      "left_turn_signal": {
+        "name": "Blinker links"
+      },
+      "low_beam": {
+        "name": "Abblendlicht"
+      },
+      "online": {
+        "name": "Online"
+      },
+      "passenger_lock": {
+        "name": "Verriegelung Beifahrerseite"
+      },
       "plugged_in": {
         "name": "Eingesteckt"
+      },
+      "position_lamp": {
+        "name": "Standlicht"
       },
       "rear_left_door": {
         "name": "Linke Hintertür"
@@ -95,21 +173,51 @@
       "rear_right_window": {
         "name": "Fenster hinten rechts"
       },
+      "right_turn_signal": {
+        "name": "Blinker rechts"
+      },
+      "steering_wheel_heater": {
+        "name": "Lenkradheizung"
+      },
       "trunk": {
         "name": "Kofferraum"
       }
     },
-    "lock": {
-      "doors": {
-        "name": "Türen"
+    "device_tracker": {
+      "location": {
+        "name": "Position"
       }
     },
     "sensor": {
+      "ac_charge_current": {
+        "name": "AC-Ladestrom"
+      },
       "battery_state_of_charge": {
         "name": "Batterieladestand"
       },
+      "charge_target_soc": {
+        "name": "Ladelimit"
+      },
       "chargeCurrent": {
-        "name": "Aktuelle Stromstärke"
+        "name": "Ladestrom"
+      },
+      "dc_charge_current": {
+        "name": "DC-Ladestrom"
+      },
+      "last_updated": {
+        "name": "Zuletzt aktualisiert"
+      },
+      "pm25_inside": {
+        "name": "Feinstaub innen"
+      },
+      "power_status": {
+        "name": "Zündungsstatus",
+        "state": {
+          "ACCESSORY": "Zubehör",
+          "OFF": "Aus",
+          "ON": "An",
+          "UNKNOWN": "Unbekannt"
+        }
       },
       "chargeStatus": {
         "name": "Ladestatus",
@@ -145,6 +253,9 @@
       "remaining_driving_range": {
         "name": "Verbleibende Reichweite"
       },
+      "speed": {
+        "name": "Geschwindigkeit"
+      },
       "seat_status_front_left": {
         "name": "Fahrersitz status",
         "state": {
@@ -163,8 +274,43 @@
           "UNKNOWN": "Unbekannt"
         }
       },
+      "seat_status_rear_left": {
+        "name": "Sitzstatus hinten links",
+        "state": {
+          "FAN": "Lüften",
+          "HEATING": "Heizen",
+          "OFF": "Aus",
+          "UNKNOWN": "Unbekannt"
+        }
+      },
+      "seat_status_rear_right": {
+        "name": "Sitzstatus hinten rechts",
+        "state": {
+          "FAN": "Lüften",
+          "HEATING": "Heizen",
+          "OFF": "Aus",
+          "UNKNOWN": "Unbekannt"
+        }
+      },
       "temperature_inside": {
         "name": "Innenraumtemperatur"
+      },
+      "temperature_target": {
+        "name": "Zieltemperatur"
+      },
+      "temperature_cockpit": {
+        "name": "Cockpittemperatur"
+      },
+      "vehicle_status": {
+        "name": "Fahrzeugstatus",
+        "state": {
+          "DRIVING": "Fahren",
+          "PARKED": "Geparkt",
+          "UNKNOWN": "Unbekannt"
+        }
+      },
+      "vehicle_status_code": {
+        "name": "Fahrzeugstatuscode"
       }
     }
   }

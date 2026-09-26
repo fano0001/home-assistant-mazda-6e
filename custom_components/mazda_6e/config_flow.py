@@ -81,6 +81,12 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self.region = self.reauth_entry.data.get(CONF_REGION, REGION_EUROPE)
         return await self.async_step_reauth_confirm()
 
+    async def async_step_reconfigure(self, user_input=None):
+        """Reconfigure the account used by an existing vehicle entry."""
+        self.reauth_entry = self._get_reauth_entry()
+        self.deviceid = self.reauth_entry.data.get("deviceid") or str(uuid.uuid4())
+        return await self.async_step_reauth_confirm(user_input)
+
     async def async_step_reauth_confirm(self, user_input=None):
         """Ask for ordinary credentials, preserving the registered device."""
         if user_input is None:

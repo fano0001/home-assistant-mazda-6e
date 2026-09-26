@@ -6,7 +6,7 @@
   "documentation": "https://github.com/fano0001/home-assistant-mazda-6e",
   "issue_tracker": "https://github.com/fano0001/home-assistant-mazda-6e/issues",
   "iot_class": "cloud_polling",
-  "version": "1.1.0",
+  "version": "1.2.2",
   "requirements": [
     "cryptography>=46.0.7,<49"
   ]

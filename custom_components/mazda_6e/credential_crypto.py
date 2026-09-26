@@ -59,9 +59,30 @@ def decrypt_control_serial(value_b64: str, private_key_b64: str) -> str:
 def sign_door_control(open_doors: bool, rc_token: str, serial_no: str,
                       vehicle_id: int, private_key_b64: str) -> str:
     """Sign a door-control request using Mazda's canonical field order."""
-    source = (
-        f"open={'true' if open_doors else 'false'}&rcToken={rc_token}"
-        f"&seriralNo={serial_no}&vehicleId={vehicle_id}"
+    return sign_control_payload(
+        {
+            "open": open_doors,
+            "rcToken": rc_token,
+            "seriralNo": serial_no,
+            "vehicleId": vehicle_id,
+        },
+        private_key_b64,
+    )
+
+
+def sign_control_payload(
+    payload: dict[str, object], private_key_b64: str, *, omit_keys: set[str] | None = None,
+) -> str:
+    """Sign a Mazda control payload using its lexicographically sorted fields."""
+    omit_keys = omit_keys or set()
+
+    def value_text(value: object) -> str:
+        return str(value).lower() if isinstance(value, bool) else str(value)
+
+    source = "&".join(
+        f"{key}={value_text(value)}"
+        for key, value in sorted(payload.items())
+        if key != "sign" and key not in omit_keys
     )
     try:
         key = serialization.load_der_private_key(
@@ -73,4 +94,4 @@ def sign_door_control(open_doors: bool, rc_token: str, serial_no: str,
             key.sign(source.encode(), padding.PKCS1v15(), hashes.SHA256())
         ).decode()
     except (ValueError, TypeError, UnsupportedAlgorithm):
-        raise MazdaECryptoError("Door-control signing failed.") from None
+        raise MazdaECryptoError("Control signing failed.") from None

@@ -5,3 +5,24 @@ __pycache__/
 __pycache__/
 *.pyc
 .pytest_cache/
+
+# Python
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+venv/
+
+# Captured API traffic (contains tokens, VIN and personal data)
+flows.txt
+*flow*
+*.flow
+*.flows
+*.har
+/captures/
+
+# Editors / OS
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db
