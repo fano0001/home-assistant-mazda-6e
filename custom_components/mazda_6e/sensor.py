@@ -12,8 +12,8 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
-    CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
     PERCENTAGE,
+    UnitOfDensity,
     UnitOfElectricCurrent,
     UnitOfLength,
     UnitOfPressure,
@@ -218,7 +218,7 @@ SENSOR_TYPES: tuple[Mazda6eSensorDescription, ...] = (
         key="pm25_inside",
         translation_key="pm25_inside",
         device_class=SensorDeviceClass.PM25,
-        native_unit_of_measurement=CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
+        native_unit_of_measurement=UnitOfDensity.MICROGRAMS_PER_CUBIC_METER,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda data: data["status"]["hvac"]["insidePm25"],
     ),
