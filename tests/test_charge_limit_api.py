@@ -121,3 +121,82 @@ def test_set_charge_limit_accepts_code_1000_only_when_status_matches(api_context
 
     assert result["resultCode"] == 0
     assert api._async_set_charge_limit_once.await_count == 2
+
+
+def test_get_battery_preheating_plan_uses_observed_contract(api_context):
+    """Select the type-zero battery plan from the captured query endpoint."""
+    api, _, _ = make_api(*api_context)
+    expected = {"planId": 7, "planType": 0, "isValid": 1, "endData": "20260928060000"}
+    api._request = AsyncMock(return_value={"data": [expected, {"planId": 8, "planType": 1}]})
+
+    result = asyncio.run(api.async_get_battery_preheating_plan(123))
+
+    assert result == expected
+    call = api._request.await_args
+    assert call.args[0].endswith("/heating-plans/query/list")
+    assert call.args[2] == {"vehicleId": "123"}
+
+
+@pytest.mark.parametrize(
+    ("method", "args", "route", "serial_type", "expected_payload", "signed_data"),
+    [
+        (
+            "async_update_battery_preheating",
+            (123, 7, 0, "20260928060000"),
+            "/heating-plans/update-plan",
+            "5",
+            {
+                "endData": "20260928060000",
+                "planId": "7",
+                "planType": 0,
+                "command": "COMMAND_HEATING_PLANS_UPDATE",
+                "rcToken": "",
+                "seriralNo": "serial",
+                "vehicleId": "123",
+            },
+            b"endData=20260928060000&planId=7&planType=0&seriralNo=serial&vehicleId=123",
+        ),
+        (
+            "async_disable_battery_preheating",
+            (123, 7),
+            "/heating-plans/plan-availability",
+            "5",
+            {
+                "enabled": False,
+                "planId": "7",
+                "command": "COMMAND_HEATING_PLANS_AVAILABILITY",
+                "rcToken": "",
+                "seriralNo": "serial",
+                "vehicleId": "123",
+            },
+            b"enabled=false&planId=7&seriralNo=serial&vehicleId=123",
+        ),
+    ],
+)
+def test_battery_preheating_commands_use_observed_contract(
+    api_context, method, args, route, serial_type, expected_payload, signed_data,
+):
+    """Use serial type 5 and omit command and rcToken from both signatures."""
+    api, key, encrypted_serial = make_api(*api_context)
+    api._request = AsyncMock(side_effect=[
+        {"data": encrypted_serial},
+        {"data": {"commandId": "command-id"}},
+        {"data": {"resultCode": 0, "errorMsg": "success"}},
+    ])
+
+    result = asyncio.run(getattr(api, method)(*args))
+
+    assert result["resultCode"] == 0
+    calls = api._request.await_args_list
+    assert calls[0].args[2] == {"type": serial_type}
+    assert calls[1].args[0].endswith(route)
+    payload = calls[1].args[2]
+    signature = payload.pop("sign")
+    assert payload == expected_payload
+    key.verify(
+        base64.b64decode(signature),
+        signed_data,
+        padding.PKCS1v15(),
+        hashes.SHA256(),
+    )
+    assert calls[2].args[2] == {"commandId": "command-id", "vehicleId": "123"}

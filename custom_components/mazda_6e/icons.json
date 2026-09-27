@@ -1,5 +1,15 @@
 {
   "entity": {
+    "switch": {
+      "battery_preheating": {
+        "default": "mdi:battery-clock"
+      }
+    },
+    "time": {
+      "battery_preheating_departure_time": {
+        "default": "mdi:clock-outline"
+      }
+    },
     "number": {
       "charge_limit": {
         "default": "mdi:battery-charging-80"

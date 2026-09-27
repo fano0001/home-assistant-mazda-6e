@@ -311,11 +311,19 @@
       }
     },
     "switch": {
+      "battery_preheating": {
+        "name": "Battery preheating"
+      },
       "front_defrost": {
         "name": "Front defrost"
       },
       "steering_wheel_heat": {
         "name": "Steering wheel heat"
+      }
+    },
+    "time": {
+      "battery_preheating_departure_time": {
+        "name": "Battery preheating departure time"
       }
     }
   }

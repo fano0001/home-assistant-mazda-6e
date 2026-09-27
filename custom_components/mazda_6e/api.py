@@ -231,6 +231,26 @@ class Mazda6EApi:
         raw = await self._request(url, headers, body)
         return raw.get("data")
 
+    async def async_get_battery_preheating_plan(self, vehicle_id: int) -> dict | None:
+        """Return the captured battery-preheating plan for a vehicle."""
+        headers = {
+            **HEADERS_BASE,
+            "authorization": self.token,
+            "deviceid": self.deviceid,
+        }
+        raw = await self._request(
+            f"{base_url(self.region)}/cma-app-car-control/api/heating-plans/query/list",
+            headers,
+            {"vehicleId": str(vehicle_id)},
+        )
+        plans = raw.get("data")
+        if not isinstance(plans, list):
+            raise ValueError("Battery-preheating response omitted plan list")
+        return next(
+            (plan for plan in plans if isinstance(plan, dict) and plan.get("planType") == 0),
+            None,
+        )
+
     async def async_unlock(self, vehicle_id: int):
         """Unlock the vehicle doors through Mazda cloud control."""
         return await self._async_door_control(vehicle_id, open_doors=True)
@@ -322,6 +342,88 @@ class Mazda6EApi:
                     return {"resultCode": 1000, "errorMsg": "Requested charge limit is active"}
                 if attempt == 1:
                     raise
+
+    async def async_update_battery_preheating(
+        self,
+        vehicle_id: int,
+        plan_id: int | str,
+        plan_type: int,
+        end_data: str,
+    ) -> dict:
+        """Enable or update the captured battery-preheating plan."""
+        if type(plan_type) is not int or not isinstance(end_data, str):
+            raise ValueError("Invalid battery-preheating plan")
+        return await self._async_battery_preheating_command(
+            vehicle_id,
+            "update-plan",
+            "COMMAND_HEATING_PLANS_UPDATE",
+            {
+                "endData": end_data,
+                "planId": str(plan_id),
+                "planType": plan_type,
+            },
+        )
+
+    async def async_disable_battery_preheating(
+        self, vehicle_id: int, plan_id: int | str,
+    ) -> dict:
+        """Disable the captured battery-preheating plan."""
+        return await self._async_battery_preheating_command(
+            vehicle_id,
+            "plan-availability",
+            "COMMAND_HEATING_PLANS_AVAILABILITY",
+            {"enabled": False, "planId": str(plan_id)},
+        )
+
+    async def _async_battery_preheating_command(
+        self,
+        vehicle_id: int,
+        route: str,
+        command: str,
+        plan_payload: dict,
+    ) -> dict:
+        """Submit and poll a captured battery-preheating command."""
+        if not self.control_private_key:
+            raise ConfigEntryAuthFailed("Sign in again to register a control key")
+
+        headers = {**HEADERS_BASE, "authorization": self.token, "deviceid": self.deviceid}
+        serial_response = await self._request(
+            f"{base_url(self.region)}/cma-app-car-control/api/serial-no/get",
+            headers,
+            {"type": "5"},
+        )
+        encrypted_serial = serial_response.get("data")
+        if not isinstance(encrypted_serial, str):
+            raise ValueError("Serial response omitted data")
+
+        payload = {
+            **plan_payload,
+            "command": command,
+            "rcToken": "",
+            "seriralNo": decrypt_control_serial(encrypted_serial, self.control_private_key),
+            "vehicleId": str(vehicle_id),
+        }
+        submitted = await self._request(
+            f"{base_url(self.region)}/cma-app-car-control/api/heating-plans/{route}",
+            headers,
+            {
+                **payload,
+                "sign": sign_control_payload(
+                    payload,
+                    self.control_private_key,
+                    omit_keys={"command", "rcToken"},
+                ),
+            },
+        )
+        submitted_data = submitted.get("data")
+        if not isinstance(submitted_data, dict) or not isinstance(submitted_data.get("commandId"), str):
+            raise ValueError("Battery-preheating response omitted commandId")
+        return await self._async_wait_for_control_result(
+            headers,
+            vehicle_id,
+            submitted_data["commandId"],
+            allow_already_locked=False,
+        )
 
     async def _async_set_charge_limit_once(self, vehicle_id: int, charge_limit: int):
         """Submit one charge-limit command and wait for its result."""

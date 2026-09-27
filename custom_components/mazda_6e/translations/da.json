@@ -311,11 +311,19 @@
       }
     },
     "switch": {
+      "battery_preheating": {
+        "name": "Batteriforvarmning"
+      },
       "front_defrost": {
         "name": "Forrudeafrimning"
       },
       "steering_wheel_heat": {
         "name": "Ratvarme"
+      }
+    },
+    "time": {
+      "battery_preheating_departure_time": {
+        "name": "Afgangstid for batteriforvarmning"
       }
     }
   }

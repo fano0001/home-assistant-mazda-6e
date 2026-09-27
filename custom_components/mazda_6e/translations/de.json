@@ -311,11 +311,19 @@
       }
     },
     "switch": {
+      "battery_preheating": {
+        "name": "Batterievorheizung"
+      },
       "front_defrost": {
         "name": "Frontscheibenenteisung"
       },
       "steering_wheel_heat": {
         "name": "Lenkradheizung"
+      }
+    },
+    "time": {
+      "battery_preheating_departure_time": {
+        "name": "Abfahrtszeit der Batterievorheizung"
       }
     }
   }
