@@ -33,14 +33,6 @@
         "description": "Gib deine Mazda-Zugangsdaten und den Kontroll-Passcode ein.",
         "title": "Cloud-Steuerung konfigurieren"
       },
-      "selector": {
-        "region": {
-          "options": {
-            "asia": "Asien",
-            "europe": "Europa"
-          }
-        }
-      },
       "user": {
         "data": {
           "control_pin": "Kontroll-Passcode (optional)",
@@ -60,6 +52,14 @@
         },
         "description": "Gib den Code ein, den du per Email erhalten hast.",
         "title": "Verifizierungscode"
+      }
+    }
+  },
+  "selector": {
+    "region": {
+      "options": {
+        "asia": "Asien",
+        "europe": "Europa"
       }
     }
   },
@@ -193,11 +193,11 @@
       "charge_status": {
         "name": "Ladestatus",
         "state": {
-          "CHARGING": "Lädt",
-          "COMPLETED": "Abgeschlossen",
-          "NOT_CHARGING": "Läd nicht",
-          "PAUSED": "Pausiert",
-          "UNKNOWN": "Unbekannt"
+          "charging": "Lädt",
+          "completed": "Abgeschlossen",
+          "not_charging": "Läd nicht",
+          "paused": "Pausiert",
+          "unknown": "Unbekannt"
         }
       },
       "charge_target_soc": {
@@ -227,10 +227,10 @@
       "power_status": {
         "name": "Zündungsstatus",
         "state": {
-          "ACCESSORY": "Zubehör",
-          "OFF": "Aus",
-          "ON": "An",
-          "UNKNOWN": "Unbekannt"
+          "accessory": "Zubehör",
+          "off": "Aus",
+          "on": "An",
+          "unknown": "Unbekannt"
         }
       },
       "rear_left_tire_pressure": {
@@ -248,37 +248,37 @@
       "seat_status_front_left": {
         "name": "Fahrersitz status",
         "state": {
-          "FAN": "Lüften",
-          "HEATING": "Heizen",
-          "OFF": "Aus",
-          "UNKNOWN": "Unbekannt"
+          "fan": "Lüften",
+          "heating": "Heizen",
+          "off": "Aus",
+          "unknown": "Unbekannt"
         }
       },
       "seat_status_front_right": {
         "name": "Beifahrersitz status",
         "state": {
-          "FAN": "Lüften",
-          "HEATING": "Heizen",
-          "OFF": "Aus",
-          "UNKNOWN": "Unbekannt"
+          "fan": "Lüften",
+          "heating": "Heizen",
+          "off": "Aus",
+          "unknown": "Unbekannt"
         }
       },
       "seat_status_rear_left": {
         "name": "Sitzstatus hinten links",
         "state": {
-          "FAN": "Lüften",
-          "HEATING": "Heizen",
-          "OFF": "Aus",
-          "UNKNOWN": "Unbekannt"
+          "fan": "Lüften",
+          "heating": "Heizen",
+          "off": "Aus",
+          "unknown": "Unbekannt"
         }
       },
       "seat_status_rear_right": {
         "name": "Sitzstatus hinten rechts",
         "state": {
-          "FAN": "Lüften",
-          "HEATING": "Heizen",
-          "OFF": "Aus",
-          "UNKNOWN": "Unbekannt"
+          "fan": "Lüften",
+          "heating": "Heizen",
+          "off": "Aus",
+          "unknown": "Unbekannt"
         }
       },
       "speed": {
@@ -296,9 +296,9 @@
       "vehicle_status": {
         "name": "Fahrzeugstatus",
         "state": {
-          "DRIVING": "Fahren",
-          "PARKED": "Geparkt",
-          "UNKNOWN": "Unbekannt"
+          "driving": "Fahren",
+          "parked": "Geparkt",
+          "unknown": "Unbekannt"
         }
       },
       "vehicle_status_code": {

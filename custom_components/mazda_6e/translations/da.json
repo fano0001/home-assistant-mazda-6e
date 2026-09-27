@@ -33,14 +33,6 @@
         "description": "Indtast oplysningerne til din Mazda-konto og kontrolkoden til cloudstyring.",
         "title": "Konfigurer cloudstyring"
       },
-      "selector": {
-        "region": {
-          "options": {
-            "asia": "Asien",
-            "europe": "Europa"
-          }
-        }
-      },
       "user": {
         "data": {
           "control_pin": "Kontrolkode (valgfri)",
@@ -60,6 +52,14 @@
         },
         "description": "Indtast koden, du har modtaget via e-mail.",
         "title": "Bekræftelseskode"
+      }
+    }
+  },
+  "selector": {
+    "region": {
+      "options": {
+        "asia": "Asien",
+        "europe": "Europa"
       }
     }
   },
@@ -117,11 +117,11 @@
       "charge_status": {
         "name": "Opladningsstatus",
         "state": {
-          "CHARGING": "Oplader",
-          "COMPLETED": "Færdig",
-          "NOT_CHARGING": "Oplader ikke",
-          "PAUSED": "Sat på pause",
-          "UNKNOWN": "Ukendt"
+          "charging": "Oplader",
+          "completed": "Færdig",
+          "not_charging": "Oplader ikke",
+          "paused": "Sat på pause",
+          "unknown": "Ukendt"
         }
       },
       "front_left_tire_pressure": {
@@ -151,19 +151,19 @@
       "seat_status_front_left": {
         "name": "Status for førersæde",
         "state": {
-          "FAN": "Ventilation",
-          "HEATING": "Varme",
-          "OFF": "Slukket",
-          "UNKNOWN": "Ukendt"
+          "fan": "Ventilation",
+          "heating": "Varme",
+          "off": "Slukket",
+          "unknown": "Ukendt"
         }
       },
       "seat_status_front_right": {
         "name": "Status for passagersæde",
         "state": {
-          "FAN": "Ventilation",
-          "HEATING": "Varme",
-          "OFF": "Slukket",
-          "UNKNOWN": "Ukendt"
+          "fan": "Ventilation",
+          "heating": "Varme",
+          "off": "Slukket",
+          "unknown": "Ukendt"
         }
       },
       "temperature_inside": {

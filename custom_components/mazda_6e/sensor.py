@@ -57,7 +57,7 @@ def _seat(position: str) -> Mazda6eSensorDescription:
         key=f"seat_status_{position}",
         translation_key=f"seat_status_{position}",
         device_class=SensorDeviceClass.ENUM,
-        options=[e.name for e in SeatStatusMode],
+        options=[e.name.lower() for e in SeatStatusMode],
         value_fn=lambda data, p=_SEAT_KEYS[position]: SeatStatusMode.safe_name(
             data["status"]["seat"][p]["mode"]
         ),
@@ -174,7 +174,7 @@ SENSOR_TYPES: tuple[Mazda6eSensorDescription, ...] = (
         translation_key="charge_status",
         icon="mdi:state-machine",
         device_class=SensorDeviceClass.ENUM,
-        options=[e.name for e in ChargeStatus],
+        options=[e.name.lower() for e in ChargeStatus],
         value_fn=lambda data: ChargeStatus.safe_name(data["status"]["charge"].get("chargeStatus"))
     ),
     *(_seat(position) for position in _SEAT_KEYS),
@@ -227,7 +227,7 @@ SENSOR_TYPES: tuple[Mazda6eSensorDescription, ...] = (
         translation_key="power_status",
         icon="mdi:power",
         device_class=SensorDeviceClass.ENUM,
-        options=[e.name for e in PowerStatus],
+        options=[e.name.lower() for e in PowerStatus],
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda data: PowerStatus.safe_name(data["status"]["vehicleStatus"]["powerStatus"]),
     ),
@@ -236,7 +236,7 @@ SENSOR_TYPES: tuple[Mazda6eSensorDescription, ...] = (
         translation_key="vehicle_status",
         icon="mdi:car-info",
         device_class=SensorDeviceClass.ENUM,
-        options=[e.name for e in VehicleStatus],
+        options=[e.name.lower() for e in VehicleStatus],
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda data: VehicleStatus.safe_name(data["status"]["vehicleStatus"]["status"]),
     ),

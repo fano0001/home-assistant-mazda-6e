@@ -32,9 +32,9 @@ class ChargeStatus(IntEnum):
     @classmethod
     def safe_name(cls, value: int | None) -> str:
         try:
-            return cls(value).name
+            return cls(value).name.lower()
         except (ValueError, TypeError):
-            return "UNKNOWN"
+            return "unknown"
 
 
 class SeatStatusMode(IntEnum):
@@ -46,9 +46,9 @@ class SeatStatusMode(IntEnum):
     @classmethod
     def safe_name(cls, value: int | None) -> str:
         try:
-            return cls(value).name
+            return cls(value).name.lower()
         except (ValueError, TypeError):
-            return "UNKNOWN"
+            return "unknown"
 
 
 class PowerStatus(IntEnum):
@@ -62,9 +62,9 @@ class PowerStatus(IntEnum):
     @classmethod
     def safe_name(cls, value: int | None) -> str:
         try:
-            return cls(value).name
+            return cls(value).name.lower()
         except (ValueError, TypeError):
-            return "UNKNOWN"
+            return "unknown"
 
 
 class VehicleStatus(IntEnum):
@@ -75,9 +75,9 @@ class VehicleStatus(IntEnum):
     @classmethod
     def safe_name(cls, value: int | None) -> str:
         try:
-            return cls(value).name
+            return cls(value).name.lower()
         except (ValueError, TypeError):
-            return "UNKNOWN"
+            return "unknown"
 
 
 # door.driverLock / door.passengerLock report 1 right after a remote unlock
