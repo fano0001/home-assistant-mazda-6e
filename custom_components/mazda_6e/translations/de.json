@@ -312,7 +312,7 @@
     },
     "switch": {
       "battery_preheating": {
-        "name": "Batterievorheizung"
+        "name": "Vorheizen der Batterie"
       },
       "front_defrost": {
         "name": "Frontscheibenenteisung"
@@ -323,7 +323,7 @@
     },
     "time": {
       "battery_preheating_departure_time": {
-        "name": "Abfahrtszeit der Batterievorheizung"
+        "name": "Abfahrtszeit für das Vorheizen der Batterie"
       }
     }
   }
