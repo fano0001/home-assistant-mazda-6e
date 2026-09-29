@@ -173,6 +173,18 @@ class Mazda6EApi:
                 headers,
                 {},
             )
+        else:
+            # Some backends accept the legacy route but return no vehicles,
+            # including accounts whose car is visible in the official app.
+            if raw.get("data") == []:
+                try:
+                    raw = await self._request(
+                        f"{base_url(self.region)}/cma-app-user/api/car/vehicles",
+                        headers,
+                        {},
+                    )
+                except Exception as err:
+                    _LOGGER.debug("Alternative vehicle endpoint unavailable: %s", err)
 
         vehicles = []
         for v in raw.get("data", []):

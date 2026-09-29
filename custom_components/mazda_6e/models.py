@@ -4,7 +4,7 @@ from enum import IntEnum
 
 @dataclass
 class Mazda6eVehicle:
-    vehicle_id: int
+    vehicle_id: int | str
     vin: str
     model_name: str
     car_name: str | None = None
