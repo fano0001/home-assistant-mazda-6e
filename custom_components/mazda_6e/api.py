@@ -2,10 +2,12 @@ import asyncio
 import aiohttp
 import time
 import logging
+from collections.abc import Callable
 
 from .const import DEVICE_NAME, REGION_EUROPE, REGION_ASIA, BASE_EU, BASE_ASIA
 from .credential_crypto import decrypt_control_serial, encrypt_credential, sign_control_payload
 from .models import Mazda6eVehicle
+from .mqtt import MazdaMqttError, async_read_status
 from homeassistant.exceptions import ConfigEntryAuthFailed
 
 _LOGGER = logging.getLogger(__name__)
@@ -51,7 +53,8 @@ def base_url(region):
 class Mazda6EApi:
     def __init__(self, session: aiohttp.ClientSession, token=None, refresh=None,
                  deviceid=None, control_public_key=None, control_private_key=None,
-                 control_pin=None, region=None):
+                 control_pin=None, region=None,
+                 token_update_callback: Callable[[str, str], None] | None = None):
         self.session = session
         self.token = token
         self.refresh = refresh
@@ -60,11 +63,20 @@ class Mazda6EApi:
         self.control_private_key = control_private_key
         self.control_pin = control_pin
         self.region = region
+        self.token_update_callback = token_update_callback
 
     async def _request(self, url: str, headers: dict, body: dict, retry: bool = True):
         """generic request method with token refresh handling"""
         async with self.session.post(url, headers=headers, json=body) as resp:
-            raw = await resp.json()
+            if resp.status != 200:
+                raise MazdaApiError(f"Mazda API request failed with HTTP {resp.status}")
+            try:
+                raw = await resp.json()
+            except (aiohttp.ContentTypeError, ValueError):
+                raise MazdaApiError("Mazda API returned an invalid response") from None
+
+        if not isinstance(raw, dict):
+            raise MazdaApiError("Mazda API returned an invalid response")
 
         if raw.get("success") is True:
             return raw
@@ -78,6 +90,8 @@ class Mazda6EApi:
             await self.refresh_token()
 
             headers["authorization"] = self.token
+            if "X-Tsp-User-Token" in headers:
+                headers["X-Tsp-User-Token"] = self._tsp_user_token()
 
             # try again once
             return await self._request(url, headers, body, retry=False)
@@ -144,14 +158,35 @@ class Mazda6EApi:
         body = {"refreshToken": self.refresh}
 
         async with self.session.post(url, headers=headers, json=body) as resp:
-            raw = await resp.json()
+            if resp.status != 200:
+                raise ConfigEntryAuthFailed("Token refresh failed")
+            try:
+                raw = await resp.json()
+            except (aiohttp.ContentTypeError, ValueError):
+                raise ConfigEntryAuthFailed("Token refresh failed") from None
 
         if not raw.get("success"):
             raise ConfigEntryAuthFailed("Token refresh failed")
 
         self.token = raw["data"]["token"]
         self.refresh = raw["data"]["refreshToken"]
+        if self.token_update_callback:
+            self.token_update_callback(self.token, self.refresh)
         return self.token
+
+    def _tsp_user_token(self) -> str:
+        """Return the CA token segment used by the Asia bootstrap API."""
+        if not isinstance(self.token, str) or not self.token:
+            raise ConfigEntryAuthFailed("Missing access token")
+        return self.token.rsplit("|", 1)[-1]
+
+    def _ca_headers(self) -> dict[str, str]:
+        return {
+            **HEADERS_BASE,
+            "authorization": self.token,
+            "deviceid": self.deviceid,
+            "X-Tsp-User-Token": self._tsp_user_token(),
+        }
 
     async def async_get_vehicles(self) -> list[Mazda6eVehicle]:
         headers = {
@@ -188,20 +223,42 @@ class Mazda6EApi:
 
         vehicles = []
         for v in raw.get("data", []):
-            vehicles.append(
-                Mazda6eVehicle(
+            vehicles.append(Mazda6eVehicle(
                     vehicle_id=v.get("carId") or v["vehicleId"],
                     vin=v["vin"],
                     model_name=v["modelName"],
                     car_name=v.get("carName"),
                     plate_number=v.get("plateNumber"),
                     series_name=v.get("seriesName"),
-                )
-            )
+                ))
         return vehicles
 
     async def async_get_function_config(self, vehicle_id: int) -> set[str]:
         """Return the function codes the vehicle supports (e.g. '#findCar', 'ACSW')."""
+        if self.region == REGION_ASIA:
+            raw = await self._request(
+                "https://cma-m.iov.changanauto.sg/user-apigw/"
+                "vot-connect-conf-center/api/device/appGetCarConfFunc",
+                self._ca_headers(),
+                {"carId": str(vehicle_id)},
+            )
+            codes: set[str] = set()
+
+            def collect(value) -> None:
+                if isinstance(value, dict):
+                    for key in ("applicationFuncCode", "serviceCode"):
+                        code = value.get(key)
+                        if isinstance(code, str) and code:
+                            codes.add(code)
+                    for child in value.get("children") or []:
+                        collect(child)
+                elif isinstance(value, list):
+                    for child in value:
+                        collect(child)
+
+            collect(raw.get("data"))
+            return codes
+
         url = f"{base_url(self.region)}/cma-app-user/api/vehicle/function-config"
         headers = {
             **HEADERS_BASE,
@@ -213,6 +270,9 @@ class Mazda6EApi:
         return set((raw.get("data") or {}).get("confList") or [])
 
     async def async_get_vehicle_status(self, vehicle_id: int):
+        if self.region == REGION_ASIA:
+            return await self._async_get_asia_vehicle_status(vehicle_id)
+
         url = f"{base_url(self.region)}/cma-app-car-condition/api/vehicle/condition/v2"
         headers = {
             **HEADERS_BASE,
@@ -242,6 +302,33 @@ class Mazda6EApi:
 
         raw = await self._request(url, headers, body)
         return raw.get("data")
+
+    async def _async_get_asia_vehicle_status(self, vehicle_id: int | str):
+        headers = self._ca_headers()
+        ca_base = "https://cma-m.iov.changanauto.sg"
+        device_id = str(self.deviceid or "").replace("-", "")
+        if len(device_id) != 32 or any(char not in "0123456789abcdefABCDEF" for char in device_id):
+            raise MazdaApiError("Asia MQTT requires a 32-character device ID")
+
+        config_response = await self._request(
+            f"{ca_base}/user-apigw/vot-connect-conf-center/api/device/getConnConf",
+            headers,
+            {"tuid": "", "carId": str(vehicle_id), "deviceId": device_id, "deviceType": "1"},
+        )
+        token_response = await self._request(
+            f"{ca_base}/user-apigw/vot-connect-auth-center/api/auth/getAuthTokenByUserId",
+            headers,
+            {},
+        )
+        config = config_response.get("data")
+        token_data = token_response.get("data")
+        mqtt_token = token_data.get("authToken") if isinstance(token_data, dict) else None
+        if not isinstance(config, dict) or not isinstance(mqtt_token, str) or not mqtt_token:
+            raise MazdaApiError("Asia MQTT bootstrap returned incomplete data")
+        try:
+            return await async_read_status(config, mqtt_token)
+        except MazdaMqttError as err:
+            raise MazdaApiError(str(err)) from err
 
     async def async_get_battery_preheating_plan(self, vehicle_id: int) -> dict | None:
         """Return the captured battery-preheating plan for a vehicle."""

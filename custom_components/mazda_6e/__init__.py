@@ -30,6 +30,12 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
     _LOGGER.info("Setting up Mazda 6E integration")
 
+    def update_tokens(token: str, refresh: str) -> None:
+        hass.config_entries.async_update_entry(
+            config_entry,
+            data={**config_entry.data, "token": token, "refresh": refresh},
+        )
+
     mazda6e_api = Mazda6EApi(
         aiohttp_client.async_get_clientsession(hass),
         config_entry.data["token"],
@@ -37,7 +43,8 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
         config_entry.data["deviceid"],
         control_private_key=config_entry.data.get("control_private_key"),
         control_pin=config_entry.data.get(CONF_CONTROL_PIN),
-        region=config_entry.data.get(CONF_REGION, REGION_EUROPE)
+        region=config_entry.data.get(CONF_REGION, REGION_EUROPE),
+        token_update_callback=update_tokens,
     )
 
     coordinator = Mazda6eCoordinator(hass, config_entry, mazda6e_api)

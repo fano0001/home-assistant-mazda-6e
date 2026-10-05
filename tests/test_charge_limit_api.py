@@ -36,6 +36,7 @@ def api_context(monkeypatch):
     const = load_module(monkeypatch, "api_test.const", "const.py")
     crypto = load_module(monkeypatch, "api_test.credential_crypto", "credential_crypto.py")
     load_module(monkeypatch, "api_test.models", "models.py")
+    load_module(monkeypatch, "api_test.mqtt", "mqtt.py")
     api_module = load_module(monkeypatch, "api_test.api", "api.py")
     return api_module, const, crypto
 
