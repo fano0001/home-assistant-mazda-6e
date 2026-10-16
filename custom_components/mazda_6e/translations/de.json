@@ -55,20 +55,7 @@
       }
     }
   },
-  "selector": {
-    "region": {
-      "options": {
-        "asia": "Asien",
-        "europe": "Europa"
-      }
-    }
-  },
   "entity": {
-    "number": {
-      "charge_limit": {
-        "name": "Ladelimit"
-      }
-    },
     "binary_sensor": {
       "air_conditioning": {
         "name": "Klimaanlage"
@@ -169,6 +156,11 @@
       },
       "trunk": {
         "name": "Kofferraum"
+      }
+    },
+    "number": {
+      "charge_limit": {
+        "name": "Ladelimit"
       }
     },
     "select": {
@@ -324,6 +316,26 @@
     "time": {
       "battery_preheating_departure_time": {
         "name": "Abfahrtszeit für das Vorheizen der Batterie"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "update_interval": "Standard (Sekunden)",
+          "update_interval_charging": "Beim Laden (Sekunden)",
+          "update_interval_parked": "Beim Parken (Sekunden)"
+        },
+        "title": "Aktualisierungsintervalle"
+      }
+    }
+  },
+  "selector": {
+    "region": {
+      "options": {
+        "asia": "Asien",
+        "europe": "Europa"
       }
     }
   }

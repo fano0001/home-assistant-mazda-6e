@@ -3,11 +3,24 @@ import uuid
 
 import voluptuous as vol
 from homeassistant import config_entries
+from homeassistant.config_entries import OptionsFlowWithReload
 from homeassistant.const import CONF_EMAIL, CONF_PASSWORD, CONF_REGION
+from homeassistant.core import callback
 from homeassistant.helpers import aiohttp_client
 from homeassistant.helpers.selector import TextSelector, TextSelectorConfig, TextSelectorType, SelectSelector, SelectSelectorConfig
 
-from .const import CONF_CONTROL_PIN, DOMAIN, REGION_EUROPE, REGION_ASIA
+from .const import (
+    CONF_CONTROL_PIN,
+    CONF_INTERVAL_CHARGING,
+    CONF_INTERVAL_DEFAULT,
+    CONF_INTERVAL_PARKED,
+    DEFAULT_INTERVAL_CHARGING,
+    DEFAULT_INTERVAL_PARKED,
+    DOMAIN,
+    REGION_ASIA,
+    REGION_EUROPE,
+    UPDATE_INTERVAL,
+)
 from .api import Mazda6EApi, MazdaLoginError
 from .credential_crypto import encrypt_credential, generate_control_key_pair
 
@@ -37,6 +50,8 @@ STEP3_SCHEMA = vol.Schema({
     vol.Required("verification_code"): str
 })
 
+INTERVAL_VALIDATOR = vol.All(vol.Coerce(int), vol.Range(min=60, max=86400))
+
 
 def reconfigure_schema(region):
     return vol.Schema({
@@ -57,6 +72,37 @@ def reconfigure_schema(region):
     })
 
 
+class Mazda6eOptionsFlow(OptionsFlowWithReload):
+    """Options: polling intervals (default / charging / parked).
+
+    OptionsFlowWithReload reloads the entry only when the options change,
+    so no separate update listener is needed in __init__.py.
+    """
+
+    async def async_step_init(self, user_input=None):
+        if user_input is not None:
+            return self.async_create_entry(data=user_input)
+
+        opts = self.config_entry.options
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema({
+                vol.Required(
+                    CONF_INTERVAL_DEFAULT,
+                    default=opts.get(CONF_INTERVAL_DEFAULT, UPDATE_INTERVAL),
+                ): INTERVAL_VALIDATOR,
+                vol.Required(
+                    CONF_INTERVAL_CHARGING,
+                    default=opts.get(CONF_INTERVAL_CHARGING, DEFAULT_INTERVAL_CHARGING),
+                ): INTERVAL_VALIDATOR,
+                vol.Required(
+                    CONF_INTERVAL_PARKED,
+                    default=opts.get(CONF_INTERVAL_PARKED, DEFAULT_INTERVAL_PARKED),
+                ): INTERVAL_VALIDATOR,
+            }),
+        )
+
+
 class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
 
@@ -73,6 +119,12 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self.control_pin = None
         self.region = None
 
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry):
+        """Return the options flow handler."""
+        return Mazda6eOptionsFlow()
+
     # ------------------------------------------------------------------
     # STEP 0: Start reauthentication
     # ------------------------------------------------------------------
@@ -83,12 +135,6 @@ class Mazda6eConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self.control_pin = self.reauth_entry.data.get(CONF_CONTROL_PIN)
         self.region = self.reauth_entry.data.get(CONF_REGION, REGION_EUROPE)
         return await self.async_step_reauth_confirm()
-
-    async def async_step_reconfigure(self, user_input=None):
-        """Reconfigure the account used by an existing vehicle entry."""
-        self.reauth_entry = self._get_reauth_entry()
-        self.deviceid = self.reauth_entry.data.get("deviceid") or str(uuid.uuid4())
-        return await self.async_step_reauth_confirm(user_input)
 
     async def async_step_reauth_confirm(self, user_input=None):
         """Ask for ordinary credentials, preserving the registered device."""
