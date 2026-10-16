@@ -33,14 +33,6 @@
         "description": "Indtast oplysningerne til din Mazda-konto og kontrolkoden til cloudstyring.",
         "title": "Konfigurer cloudstyring"
       },
-      "selector": {
-        "region": {
-          "options": {
-            "asia": "Asien",
-            "europe": "Europa"
-          }
-        }
-      },
       "user": {
         "data": {
           "control_pin": "Kontrolkode (valgfri)",
@@ -75,8 +67,33 @@
       }
     }
   },
+  "selector": {
+    "region": {
+      "options": {
+        "asia": "Asien",
+        "europe": "Europa"
+      }
+    }
+  },
   "entity": {
+    "number": {
+      "charge_limit": {
+        "name": "Opladningsgrænse"
+      }
+    },
     "binary_sensor": {
+      "air_conditioning": {
+        "name": "Klimaanlæg"
+      },
+      "dc_plugged_in": {
+        "name": "DC-ladestik tilsluttet"
+      },
+      "defrost": {
+        "name": "Afrimning"
+      },
+      "driver_lock": {
+        "name": "Førerdørslås"
+      },
       "front_left_door": {
         "name": "Førerdør"
       },
@@ -89,11 +106,29 @@
       "front_right_window": {
         "name": "Passagervindue"
       },
+      "high_beam": {
+        "name": "Fjernlys"
+      },
       "is_charging": {
         "name": "Oplader"
       },
+      "left_turn_signal": {
+        "name": "Venstre blinklys"
+      },
+      "low_beam": {
+        "name": "Nærlys"
+      },
+      "online": {
+        "name": "Online"
+      },
+      "passenger_lock": {
+        "name": "Passagerdørslås"
+      },
       "plugged_in": {
         "name": "Tilsluttet"
+      },
+      "position_lamp": {
+        "name": "Positionslys"
       },
       "rear_left_door": {
         "name": "Venstre bagdør"
@@ -107,8 +142,37 @@
       "rear_right_window": {
         "name": "Højre bagrude"
       },
+      "right_turn_signal": {
+        "name": "Højre blinklys"
+      },
+      "steering_wheel_heater": {
+        "name": "Ratvarme"
+      },
       "trunk": {
         "name": "Bagagerum"
+      }
+    },
+    "button": {
+      "find_vehicle": {
+        "name": "Find køretøj"
+      },
+      "honk_horn": {
+        "name": "Aktivér horn"
+      }
+    },
+    "climate": {
+      "cabin_climate": {
+        "name": "Kabineklima"
+      }
+    },
+    "cover": {
+      "windows": {
+        "name": "Vinduer"
+      }
+    },
+    "device_tracker": {
+      "location": {
+        "name": "Placering"
       }
     },
     "lock": {
@@ -119,7 +183,24 @@
         "name": "Bagagerum"
       }
     },
+    "select": {
+      "driver_seat_heat": {
+        "name": "Førersædevarme"
+      },
+      "driver_seat_ventilation": {
+        "name": "Førersædeventilation"
+      },
+      "passenger_seat_heat": {
+        "name": "Passagersædevarme"
+      },
+      "passenger_seat_ventilation": {
+        "name": "Passagersædeventilation"
+      }
+    },
     "sensor": {
+      "ac_charge_current": {
+        "name": "AC-ladestrøm"
+      },
       "battery_state_of_charge": {
         "name": "Ladeniveau"
       },
@@ -129,12 +210,18 @@
       "charge_status": {
         "name": "Opladningsstatus",
         "state": {
-          "CHARGING": "Oplader",
-          "COMPLETED": "Færdig",
-          "NOT_CHARGING": "Oplader ikke",
-          "PAUSED": "Sat på pause",
-          "UNKNOWN": "Ukendt"
+          "charging": "Oplader",
+          "completed": "Færdig",
+          "not_charging": "Oplader ikke",
+          "paused": "Sat på pause",
+          "unknown": "Ukendt"
         }
+      },
+      "charge_target_soc": {
+        "name": "Opladningsgrænse"
+      },
+      "dc_charge_current": {
+        "name": "DC-ladestrøm"
       },
       "front_left_tire_pressure": {
         "name": "Dæktryk venstre forhjul"
@@ -145,8 +232,23 @@
       "humidity_inside": {
         "name": "Luftfugtighed"
       },
+      "last_updated": {
+        "name": "Senest opdateret"
+      },
       "odometer": {
         "name": "Kilometertæller"
+      },
+      "pm25_inside": {
+        "name": "PM2,5 i kabinen"
+      },
+      "power_status": {
+        "name": "Strømstatus",
+        "state": {
+          "ACCESSORY": "Tilbehør",
+          "OFF": "Slukket",
+          "ON": "Tændt",
+          "UNKNOWN": "Ukendt"
+        }
       },
       "rear_left_tire_pressure": {
         "name": "Dæktryk venstre baghjul"
@@ -163,14 +265,23 @@
       "seat_status_front_left": {
         "name": "Status for førersæde",
         "state": {
-          "FAN": "Ventilation",
-          "HEATING": "Varme",
-          "OFF": "Slukket",
-          "UNKNOWN": "Ukendt"
+          "fan": "Ventilation",
+          "heating": "Varme",
+          "off": "Slukket",
+          "unknown": "Ukendt"
         }
       },
       "seat_status_front_right": {
         "name": "Status for passagersæde",
+        "state": {
+          "fan": "Ventilation",
+          "heating": "Varme",
+          "off": "Slukket",
+          "unknown": "Ukendt"
+        }
+      },
+      "seat_status_rear_left": {
+        "name": "Status for venstre bagsæde",
         "state": {
           "FAN": "Ventilation",
           "HEATING": "Varme",
@@ -178,8 +289,53 @@
           "UNKNOWN": "Ukendt"
         }
       },
+      "seat_status_rear_right": {
+        "name": "Status for højre bagsæde",
+        "state": {
+          "FAN": "Ventilation",
+          "HEATING": "Varme",
+          "OFF": "Slukket",
+          "UNKNOWN": "Ukendt"
+        }
+      },
+      "speed": {
+        "name": "Hastighed"
+      },
+      "temperature_cockpit": {
+        "name": "Cockpittemperatur"
+      },
       "temperature_inside": {
         "name": "Kabinetemperatur"
+      },
+      "temperature_target": {
+        "name": "Måltemperatur"
+      },
+      "vehicle_status": {
+        "name": "Køretøjsstatus",
+        "state": {
+          "DRIVING": "Kører",
+          "PARKED": "Parkeret",
+          "UNKNOWN": "Ukendt"
+        }
+      },
+      "vehicle_status_code": {
+        "name": "Køretøjsstatuskode"
+      }
+    },
+    "switch": {
+      "battery_preheating": {
+        "name": "Batteriforvarmning"
+      },
+      "front_defrost": {
+        "name": "Forrudeafrimning"
+      },
+      "steering_wheel_heat": {
+        "name": "Ratvarme"
+      }
+    },
+    "time": {
+      "battery_preheating_departure_time": {
+        "name": "Afgangstid for batteriforvarmning"
       }
     }
   }

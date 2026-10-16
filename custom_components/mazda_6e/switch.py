@@ -6,6 +6,7 @@ from homeassistant.components.switch import SwitchEntity, SwitchEntityDescriptio
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .api import MazdaApiError
@@ -47,6 +48,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
             entities.append(Mazda6eControlSwitch(coordinator, vehicle, SWITCHES[0]))
         if "vehicleStatus" in status and vehicle.supports("SteeringWheelSW"):
             entities.append(Mazda6eControlSwitch(coordinator, vehicle, SWITCHES[1]))
+        if item.get("battery_preheating_plan") is not None:
+            entities.append(Mazda6eBatteryPreheatingSwitch(coordinator, vehicle))
     async_add_entities(entities)
 
 
@@ -85,3 +88,67 @@ class Mazda6eControlSwitch(Mazda6eEntity, SwitchEntity):
         except (MazdaApiError, RuntimeError, TimeoutError) as err:
             raise HomeAssistantError(f"Mazda rejected the {self.name} command: {err}") from err
         await self.coordinator.async_refresh_until(lambda: self.is_on is enabled)
+
+
+BATTERY_PREHEATING_DESCRIPTION = SwitchEntityDescription(
+    key="battery_preheating",
+    translation_key="battery_preheating",
+    icon="mdi:battery-clock",
+    entity_category=EntityCategory.CONFIG,
+)
+
+
+class Mazda6eBatteryPreheatingSwitch(Mazda6eEntity, SwitchEntity):
+    """Enable or disable the vehicle battery-preheating plan."""
+
+    def __init__(self, coordinator, vehicle) -> None:
+        super().__init__(coordinator, vehicle, BATTERY_PREHEATING_DESCRIPTION)
+
+    @property
+    def _plan(self) -> dict | None:
+        return (self.vehicle_data or {}).get("battery_preheating_plan")
+
+    @property
+    def is_on(self) -> bool | None:
+        plan = self._plan
+        if plan is None or type(plan.get("isValid")) is not int:
+            return None
+        return plan["isValid"] == 1
+
+    @property
+    def available(self) -> bool:
+        return (
+            super().available
+            and bool(self.coordinator.api.control_private_key)
+            and self._plan is not None
+        )
+
+    async def async_turn_on(self, **kwargs) -> None:
+        plan = self._require_plan()
+        try:
+            await self.coordinator.api.async_update_battery_preheating(
+                self.vehicle.vehicle_id,
+                plan["planId"],
+                plan["planType"],
+                plan["endData"],
+            )
+        except (KeyError, MazdaApiError, RuntimeError, TimeoutError, ValueError) as err:
+            raise HomeAssistantError(f"Mazda rejected the {self.name} command: {err}") from err
+        await self.coordinator.async_refresh_until(lambda: self.is_on is True)
+
+    async def async_turn_off(self, **kwargs) -> None:
+        plan = self._require_plan()
+        try:
+            await self.coordinator.api.async_disable_battery_preheating(
+                self.vehicle.vehicle_id,
+                plan["planId"],
+            )
+        except (KeyError, MazdaApiError, RuntimeError, TimeoutError, ValueError) as err:
+            raise HomeAssistantError(f"Mazda rejected the {self.name} command: {err}") from err
+        await self.coordinator.async_refresh_until(lambda: self.is_on is False)
+
+    def _require_plan(self) -> dict:
+        plan = self._plan
+        if plan is None:
+            raise HomeAssistantError("Mazda did not return a battery-preheating plan")
+        return plan

@@ -16,6 +16,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .const import DOMAIN
 from .entity import Mazda6eEntity
+from .entity_deduplication import control_replaces_read_only_entity
 from .models import Mazda6eVehicle, ChargeConnectionStatus, ChargeStatus, LOCK_UNLOCKED
 
 _LOGGER = logging.getLogger(__name__)
@@ -150,6 +151,14 @@ async def async_setup_entry(
         vehicle: Mazda6eVehicle = data["vehicle"]
 
         for description in SENSOR_TYPES:
+            if control_replaces_read_only_entity(
+                "binary_sensor",
+                description.key,
+                vehicle.functions,
+                has_control_key=bool(getattr(coordinator.api, "control_private_key", None)),
+                has_control_pin=bool(getattr(coordinator.api, "control_pin", None)),
+            ):
+                continue
             try:
                 description.value_fn(data)
             except Exception:

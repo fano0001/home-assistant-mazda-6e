@@ -12,8 +12,8 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
-    CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
     PERCENTAGE,
+    UnitOfDensity,
     UnitOfElectricCurrent,
     UnitOfLength,
     UnitOfPressure,
@@ -27,6 +27,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .const import DOMAIN
 from .entity import Mazda6eEntity
+from .entity_deduplication import control_replaces_read_only_entity
 from .helpers.validators import remaining_charge_time, speed_value, temperature, timestamp_ms
 from .models import Mazda6eVehicle, ChargeStatus, PowerStatus, SeatStatusMode, VehicleStatus
 
@@ -57,7 +58,7 @@ def _seat(position: str) -> Mazda6eSensorDescription:
         key=f"seat_status_{position}",
         translation_key=f"seat_status_{position}",
         device_class=SensorDeviceClass.ENUM,
-        options=[e.name for e in SeatStatusMode],
+        options=[e.name.lower() for e in SeatStatusMode],
         value_fn=lambda data, p=_SEAT_KEYS[position]: SeatStatusMode.safe_name(
             data["status"]["seat"][p]["mode"]
         ),
@@ -174,7 +175,7 @@ SENSOR_TYPES: tuple[Mazda6eSensorDescription, ...] = (
         translation_key="charge_status",
         icon="mdi:state-machine",
         device_class=SensorDeviceClass.ENUM,
-        options=[e.name for e in ChargeStatus],
+        options=[e.name.lower() for e in ChargeStatus],
         value_fn=lambda data: ChargeStatus.safe_name(data["status"]["charge"].get("chargeStatus"))
     ),
     *(_seat(position) for position in _SEAT_KEYS),
@@ -218,7 +219,7 @@ SENSOR_TYPES: tuple[Mazda6eSensorDescription, ...] = (
         key="pm25_inside",
         translation_key="pm25_inside",
         device_class=SensorDeviceClass.PM25,
-        native_unit_of_measurement=CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
+        native_unit_of_measurement=UnitOfDensity.MICROGRAMS_PER_CUBIC_METER,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda data: data["status"]["hvac"]["insidePm25"],
     ),
@@ -227,8 +228,7 @@ SENSOR_TYPES: tuple[Mazda6eSensorDescription, ...] = (
         translation_key="power_status",
         icon="mdi:power",
         device_class=SensorDeviceClass.ENUM,
-        options=[e.name for e in PowerStatus],
-        entity_category=EntityCategory.DIAGNOSTIC,
+        options=[e.name.lower() for e in PowerStatus],
         value_fn=lambda data: PowerStatus.safe_name(data["status"]["vehicleStatus"]["powerStatus"]),
     ),
     Mazda6eSensorDescription(
@@ -236,8 +236,7 @@ SENSOR_TYPES: tuple[Mazda6eSensorDescription, ...] = (
         translation_key="vehicle_status",
         icon="mdi:car-info",
         device_class=SensorDeviceClass.ENUM,
-        options=[e.name for e in VehicleStatus],
-        entity_category=EntityCategory.DIAGNOSTIC,
+        options=[e.name.lower() for e in VehicleStatus],
         value_fn=lambda data: VehicleStatus.safe_name(data["status"]["vehicleStatus"]["status"]),
     ),
     Mazda6eSensorDescription(
@@ -245,6 +244,7 @@ SENSOR_TYPES: tuple[Mazda6eSensorDescription, ...] = (
         translation_key="vehicle_status_code",
         icon="mdi:code-tags",
         entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda data: data["status"]["vehicleStatus"]["status"],
     ),
@@ -271,6 +271,14 @@ async def async_setup_entry(
         vehicle: Mazda6eVehicle = data["vehicle"]
 
         for description in SENSOR_TYPES:
+            if control_replaces_read_only_entity(
+                "sensor",
+                description.key,
+                vehicle.functions,
+                has_control_key=bool(getattr(coordinator.api, "control_private_key", None)),
+                has_control_pin=bool(getattr(coordinator.api, "control_pin", None)),
+            ):
+                continue
             try:
                 value = description.value_fn(data)
             except Exception:

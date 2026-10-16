@@ -33,14 +33,6 @@
         "description": "Enter your Mazda credentials and cloud-control passcode.",
         "title": "Configure cloud controls"
       },
-      "selector": {
-        "region": {
-          "options": {
-            "asia": "Asia",
-            "europe": "Europe"
-          }
-        }
-      },
       "user": {
         "data": {
           "control_pin": "Control passcode (optional)",
@@ -75,7 +67,20 @@
       }
     }
   },
+  "selector": {
+    "region": {
+      "options": {
+        "asia": "Asia",
+        "europe": "Europe"
+      }
+    }
+  },
   "entity": {
+    "number": {
+      "charge_limit": {
+        "name": "Charge limit"
+      }
+    },
     "binary_sensor": {
       "air_conditioning": {
         "name": "Air conditioning"
@@ -205,11 +210,11 @@
       "charge_status": {
         "name": "Charge status",
         "state": {
-          "CHARGING": "charging",
-          "COMPLETED": "completed",
-          "NOT_CHARGING": "Not charging",
-          "PAUSED": "paused",
-          "UNKNOWN": "unknown"
+          "charging": "charging",
+          "completed": "completed",
+          "not_charging": "Not charging",
+          "paused": "paused",
+          "unknown": "unknown"
         }
       },
       "charge_target_soc": {
@@ -239,10 +244,10 @@
       "power_status": {
         "name": "Power status",
         "state": {
-          "ACCESSORY": "Accessory",
-          "OFF": "Off",
-          "ON": "On",
-          "UNKNOWN": "Unknown"
+          "accessory": "Accessory",
+          "off": "Off",
+          "on": "On",
+          "unknown": "Unknown"
         }
       },
       "rear_left_tire_pressure": {
@@ -260,37 +265,37 @@
       "seat_status_front_left": {
         "name": "Driver seat status",
         "state": {
-          "FAN": "Fan",
-          "HEATING": "Heating",
-          "OFF": "Off",
-          "UNKNOWN": "Unknown"
+          "fan": "Fan",
+          "heating": "Heating",
+          "off": "Off",
+          "unknown": "Unknown"
         }
       },
       "seat_status_front_right": {
         "name": "Passenger seat status",
         "state": {
-          "FAN": "Fan",
-          "HEATING": "Heating",
-          "OFF": "Off",
-          "UNKNOWN": "Unknown"
+          "fan": "Fan",
+          "heating": "Heating",
+          "off": "Off",
+          "unknown": "Unknown"
         }
       },
       "seat_status_rear_left": {
         "name": "Rear left seat status",
         "state": {
-          "FAN": "Fan",
-          "HEATING": "Heating",
-          "OFF": "Off",
-          "UNKNOWN": "Unknown"
+          "fan": "Fan",
+          "heating": "Heating",
+          "off": "Off",
+          "unknown": "Unknown"
         }
       },
       "seat_status_rear_right": {
         "name": "Rear right seat status",
         "state": {
-          "FAN": "Fan",
-          "HEATING": "Heating",
-          "OFF": "Off",
-          "UNKNOWN": "Unknown"
+          "fan": "Fan",
+          "heating": "Heating",
+          "off": "Off",
+          "unknown": "Unknown"
         }
       },
       "speed": {
@@ -308,9 +313,9 @@
       "vehicle_status": {
         "name": "Vehicle status",
         "state": {
-          "DRIVING": "Driving",
-          "PARKED": "Parked",
-          "UNKNOWN": "Unknown"
+          "driving": "Driving",
+          "parked": "Parked",
+          "unknown": "Unknown"
         }
       },
       "vehicle_status_code": {
@@ -318,11 +323,19 @@
       }
     },
     "switch": {
+      "battery_preheating": {
+        "name": "Battery preheating"
+      },
       "front_defrost": {
         "name": "Front defrost"
       },
       "steering_wheel_heat": {
         "name": "Steering wheel heat"
+      }
+    },
+    "time": {
+      "battery_preheating_departure_time": {
+        "name": "Battery preheating departure time"
       }
     }
   }

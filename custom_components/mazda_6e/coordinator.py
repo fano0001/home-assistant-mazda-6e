@@ -17,6 +17,7 @@ from .const import (
     DEFAULT_INTERVAL_PARKED,
 )
 from .models import Mazda6eVehicle, ChargeStatus, VehicleStatus
+from .api import MazdaApiError
 
 CHARGING_STATES = {ChargeStatus.CHARGING.name, ChargeStatus.PAUSED.name}
 PARKED_STATES = {VehicleStatus.PARKED.name}
@@ -155,6 +156,20 @@ class Mazda6eCoordinator(DataUpdateCoordinator):
         for veh in vehicles:
             veh.functions = await self._async_get_function_config(veh.vehicle_id)
             status_response = await self.api.async_get_vehicle_status(veh.vehicle_id)
+            battery_preheating_plan = None
+            if "#batteryScheduleHeating" in veh.functions:
+                try:
+                    battery_preheating_plan = await self.api.async_get_battery_preheating_plan(
+                        veh.vehicle_id,
+                    )
+                except MazdaApiError as err:
+                    # Some vehicles advertise battery scheduling but their
+                    # regional backend does not support this endpoint.
+                    _LOGGER.debug(
+                        "Could not read battery-preheating plan for %s: %s",
+                        veh.vehicle_id,
+                        err,
+                    )
 
             status_code = (status_response or {}).get("vehicleStatus", {}).get("status")
             if self._last_vehicle_status.get(veh.vehicle_id) != status_code:
@@ -164,6 +179,7 @@ class Mazda6eCoordinator(DataUpdateCoordinator):
             vehicle_status[veh.vehicle_id] = {
                 "vehicle": veh,
                 "status": status_response,
+                "battery_preheating_plan": battery_preheating_plan,
             }
 
         new_interval = timedelta(seconds=self._select_interval(vehicle_status))

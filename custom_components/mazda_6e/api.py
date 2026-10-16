@@ -2,10 +2,12 @@ import asyncio
 import aiohttp
 import time
 import logging
+from collections.abc import Callable
 
 from .const import DEVICE_NAME, REGION_EUROPE, REGION_ASIA, BASE_EU, BASE_ASIA
 from .credential_crypto import decrypt_control_serial, encrypt_credential, sign_control_payload
 from .models import Mazda6eVehicle
+from .mqtt import MazdaMqttError, async_read_status
 from homeassistant.exceptions import ConfigEntryAuthFailed
 
 _LOGGER = logging.getLogger(__name__)
@@ -51,7 +53,8 @@ def base_url(region):
 class Mazda6EApi:
     def __init__(self, session: aiohttp.ClientSession, token=None, refresh=None,
                  deviceid=None, control_public_key=None, control_private_key=None,
-                 control_pin=None, region=None):
+                 control_pin=None, region=None,
+                 token_update_callback: Callable[[str, str], None] | None = None):
         self.session = session
         self.token = token
         self.refresh = refresh
@@ -60,11 +63,20 @@ class Mazda6EApi:
         self.control_private_key = control_private_key
         self.control_pin = control_pin
         self.region = region
+        self.token_update_callback = token_update_callback
 
     async def _request(self, url: str, headers: dict, body: dict, retry: bool = True):
         """generic request method with token refresh handling"""
         async with self.session.post(url, headers=headers, json=body) as resp:
-            raw = await resp.json()
+            if resp.status != 200:
+                raise MazdaApiError(f"Mazda API request failed with HTTP {resp.status}")
+            try:
+                raw = await resp.json()
+            except (aiohttp.ContentTypeError, ValueError):
+                raise MazdaApiError("Mazda API returned an invalid response") from None
+
+        if not isinstance(raw, dict):
+            raise MazdaApiError("Mazda API returned an invalid response")
 
         if raw.get("success") is True:
             return raw
@@ -78,6 +90,8 @@ class Mazda6EApi:
             await self.refresh_token()
 
             headers["authorization"] = self.token
+            if "X-Tsp-User-Token" in headers:
+                headers["X-Tsp-User-Token"] = self._tsp_user_token()
 
             # try again once
             return await self._request(url, headers, body, retry=False)
@@ -144,14 +158,35 @@ class Mazda6EApi:
         body = {"refreshToken": self.refresh}
 
         async with self.session.post(url, headers=headers, json=body) as resp:
-            raw = await resp.json()
+            if resp.status != 200:
+                raise ConfigEntryAuthFailed("Token refresh failed")
+            try:
+                raw = await resp.json()
+            except (aiohttp.ContentTypeError, ValueError):
+                raise ConfigEntryAuthFailed("Token refresh failed") from None
 
         if not raw.get("success"):
             raise ConfigEntryAuthFailed("Token refresh failed")
 
         self.token = raw["data"]["token"]
         self.refresh = raw["data"]["refreshToken"]
+        if self.token_update_callback:
+            self.token_update_callback(self.token, self.refresh)
         return self.token
+
+    def _tsp_user_token(self) -> str:
+        """Return the CA token segment used by the Asia bootstrap API."""
+        if not isinstance(self.token, str) or not self.token:
+            raise ConfigEntryAuthFailed("Missing access token")
+        return self.token.rsplit("|", 1)[-1]
+
+    def _ca_headers(self) -> dict[str, str]:
+        return {
+            **HEADERS_BASE,
+            "authorization": self.token,
+            "deviceid": self.deviceid,
+            "X-Tsp-User-Token": self._tsp_user_token(),
+        }
 
     async def async_get_vehicles(self) -> list[Mazda6eVehicle]:
         headers = {
@@ -173,23 +208,57 @@ class Mazda6EApi:
                 headers,
                 {},
             )
+        else:
+            # Some backends accept the legacy route but return no vehicles,
+            # including accounts whose car is visible in the official app.
+            if raw.get("data") == []:
+                try:
+                    raw = await self._request(
+                        f"{base_url(self.region)}/cma-app-user/api/car/vehicles",
+                        headers,
+                        {},
+                    )
+                except Exception as err:
+                    _LOGGER.debug("Alternative vehicle endpoint unavailable: %s", err)
 
         vehicles = []
         for v in raw.get("data", []):
-            vehicles.append(
-                Mazda6eVehicle(
+            vehicles.append(Mazda6eVehicle(
                     vehicle_id=v.get("carId") or v["vehicleId"],
                     vin=v["vin"],
                     model_name=v["modelName"],
                     car_name=v.get("carName"),
                     plate_number=v.get("plateNumber"),
                     series_name=v.get("seriesName"),
-                )
-            )
+                ))
         return vehicles
 
     async def async_get_function_config(self, vehicle_id: int) -> set[str]:
         """Return the function codes the vehicle supports (e.g. '#findCar', 'ACSW')."""
+        if self.region == REGION_ASIA:
+            raw = await self._request(
+                "https://cma-m.iov.changanauto.sg/user-apigw/"
+                "vot-connect-conf-center/api/device/appGetCarConfFunc",
+                self._ca_headers(),
+                {"carId": str(vehicle_id)},
+            )
+            codes: set[str] = set()
+
+            def collect(value) -> None:
+                if isinstance(value, dict):
+                    for key in ("applicationFuncCode", "serviceCode"):
+                        code = value.get(key)
+                        if isinstance(code, str) and code:
+                            codes.add(code)
+                    for child in value.get("children") or []:
+                        collect(child)
+                elif isinstance(value, list):
+                    for child in value:
+                        collect(child)
+
+            collect(raw.get("data"))
+            return codes
+
         url = f"{base_url(self.region)}/cma-app-user/api/vehicle/function-config"
         headers = {
             **HEADERS_BASE,
@@ -201,6 +270,9 @@ class Mazda6EApi:
         return set((raw.get("data") or {}).get("confList") or [])
 
     async def async_get_vehicle_status(self, vehicle_id: int):
+        if self.region == REGION_ASIA:
+            return await self._async_get_asia_vehicle_status(vehicle_id)
+
         url = f"{base_url(self.region)}/cma-app-car-condition/api/vehicle/condition/v2"
         headers = {
             **HEADERS_BASE,
@@ -230,6 +302,53 @@ class Mazda6EApi:
 
         raw = await self._request(url, headers, body)
         return raw.get("data")
+
+    async def _async_get_asia_vehicle_status(self, vehicle_id: int | str):
+        headers = self._ca_headers()
+        ca_base = "https://cma-m.iov.changanauto.sg"
+        device_id = str(self.deviceid or "").replace("-", "")
+        if len(device_id) != 32 or any(char not in "0123456789abcdefABCDEF" for char in device_id):
+            raise MazdaApiError("Asia MQTT requires a 32-character device ID")
+
+        config_response = await self._request(
+            f"{ca_base}/user-apigw/vot-connect-conf-center/api/device/getConnConf",
+            headers,
+            {"tuid": "", "carId": str(vehicle_id), "deviceId": device_id, "deviceType": "1"},
+        )
+        token_response = await self._request(
+            f"{ca_base}/user-apigw/vot-connect-auth-center/api/auth/getAuthTokenByUserId",
+            headers,
+            {},
+        )
+        config = config_response.get("data")
+        token_data = token_response.get("data")
+        mqtt_token = token_data.get("authToken") if isinstance(token_data, dict) else None
+        if not isinstance(config, dict) or not isinstance(mqtt_token, str) or not mqtt_token:
+            raise MazdaApiError("Asia MQTT bootstrap returned incomplete data")
+        try:
+            return await async_read_status(config, mqtt_token)
+        except MazdaMqttError as err:
+            raise MazdaApiError(str(err)) from err
+
+    async def async_get_battery_preheating_plan(self, vehicle_id: int) -> dict | None:
+        """Return the captured battery-preheating plan for a vehicle."""
+        headers = {
+            **HEADERS_BASE,
+            "authorization": self.token,
+            "deviceid": self.deviceid,
+        }
+        raw = await self._request(
+            f"{base_url(self.region)}/cma-app-car-control/api/heating-plans/query/list",
+            headers,
+            {"vehicleId": str(vehicle_id)},
+        )
+        plans = raw.get("data")
+        if not isinstance(plans, list):
+            raise ValueError("Battery-preheating response omitted plan list")
+        return next(
+            (plan for plan in plans if isinstance(plan, dict) and plan.get("planType") == 0),
+            None,
+        )
 
     async def async_unlock(self, vehicle_id: int):
         """Unlock the vehicle doors through Mazda cloud control."""
@@ -303,6 +422,149 @@ class Mazda6EApi:
     async def async_lock(self, vehicle_id: int):
         """Lock the vehicle doors through Mazda cloud control."""
         return await self._async_door_control(vehicle_id, open_doors=False)
+
+    async def async_set_charge_limit(self, vehicle_id: int, charge_limit: int):
+        """Set the vehicle target state of charge."""
+        if type(charge_limit) is not int or not 60 <= charge_limit <= 100:
+            raise ValueError("Charge limit must be a whole percentage from 60 to 100")
+        if not self.control_private_key:
+            raise ConfigEntryAuthFailed("Sign in again to register a control key")
+
+        for attempt in range(2):
+            try:
+                return await self._async_set_charge_limit_once(vehicle_id, charge_limit)
+            except RuntimeError as err:
+                if str(err) != "Control failed with result code 1000":
+                    raise
+                status = await self.async_get_vehicle_status(vehicle_id)
+                if (status or {}).get("charge", {}).get("maxSocPercent") == charge_limit:
+                    return {"resultCode": 1000, "errorMsg": "Requested charge limit is active"}
+                if attempt == 1:
+                    raise
+
+    async def async_update_battery_preheating(
+        self,
+        vehicle_id: int,
+        plan_id: int | str,
+        plan_type: int,
+        end_data: str,
+    ) -> dict:
+        """Enable or update the captured battery-preheating plan."""
+        if type(plan_type) is not int or not isinstance(end_data, str):
+            raise ValueError("Invalid battery-preheating plan")
+        return await self._async_battery_preheating_command(
+            vehicle_id,
+            "update-plan",
+            "COMMAND_HEATING_PLANS_UPDATE",
+            {
+                "endData": end_data,
+                "planId": str(plan_id),
+                "planType": plan_type,
+            },
+        )
+
+    async def async_disable_battery_preheating(
+        self, vehicle_id: int, plan_id: int | str,
+    ) -> dict:
+        """Disable the captured battery-preheating plan."""
+        return await self._async_battery_preheating_command(
+            vehicle_id,
+            "plan-availability",
+            "COMMAND_HEATING_PLANS_AVAILABILITY",
+            {"enabled": False, "planId": str(plan_id)},
+        )
+
+    async def _async_battery_preheating_command(
+        self,
+        vehicle_id: int,
+        route: str,
+        command: str,
+        plan_payload: dict,
+    ) -> dict:
+        """Submit and poll a captured battery-preheating command."""
+        if not self.control_private_key:
+            raise ConfigEntryAuthFailed("Sign in again to register a control key")
+
+        headers = {**HEADERS_BASE, "authorization": self.token, "deviceid": self.deviceid}
+        serial_response = await self._request(
+            f"{base_url(self.region)}/cma-app-car-control/api/serial-no/get",
+            headers,
+            {"type": "5"},
+        )
+        encrypted_serial = serial_response.get("data")
+        if not isinstance(encrypted_serial, str):
+            raise ValueError("Serial response omitted data")
+
+        payload = {
+            **plan_payload,
+            "command": command,
+            "rcToken": "",
+            "seriralNo": decrypt_control_serial(encrypted_serial, self.control_private_key),
+            "vehicleId": str(vehicle_id),
+        }
+        submitted = await self._request(
+            f"{base_url(self.region)}/cma-app-car-control/api/heating-plans/{route}",
+            headers,
+            {
+                **payload,
+                "sign": sign_control_payload(
+                    payload,
+                    self.control_private_key,
+                    omit_keys={"command", "rcToken"},
+                ),
+            },
+        )
+        submitted_data = submitted.get("data")
+        if not isinstance(submitted_data, dict) or not isinstance(submitted_data.get("commandId"), str):
+            raise ValueError("Battery-preheating response omitted commandId")
+        return await self._async_wait_for_control_result(
+            headers,
+            vehicle_id,
+            submitted_data["commandId"],
+            allow_already_locked=False,
+        )
+
+    async def _async_set_charge_limit_once(self, vehicle_id: int, charge_limit: int):
+        """Submit one charge-limit command and wait for its result."""
+        headers = {**HEADERS_BASE, "authorization": self.token, "deviceid": self.deviceid}
+        serial_response = await self._request(
+            f"{base_url(self.region)}/cma-app-car-control/api/serial-no/get",
+            headers,
+            {"type": "2"},
+        )
+        encrypted_serial = serial_response.get("data")
+        if not isinstance(encrypted_serial, str):
+            raise ValueError("Serial response omitted data")
+
+        payload = {
+            "chargePercentageMax": charge_limit,
+            "command": "charge_max",
+            "rcToken": "",
+            "seriralNo": decrypt_control_serial(encrypted_serial, self.control_private_key),
+            "vehicleId": str(vehicle_id),
+        }
+        submitted = await self._request(
+            f"{base_url(self.region)}/cma-app-car-control/api/charge/percentage",
+            headers,
+            {
+                **payload,
+                "sign": sign_control_payload(
+                    payload,
+                    self.control_private_key,
+                    omit_keys={"command", "rcToken"},
+                ),
+            },
+        )
+        submitted_data = submitted.get("data")
+        if not isinstance(submitted_data, dict) or not isinstance(submitted_data.get("commandId"), str):
+            raise ValueError("Charge-limit response omitted commandId")
+
+        return await self._async_wait_for_control_result(
+            headers,
+            vehicle_id,
+            submitted_data["commandId"],
+            allow_already_locked=False,
+        )
 
     async def _async_door_control(self, vehicle_id: int, *, open_doors: bool):
         """Authorize, submit, and poll a signed door-control command."""
