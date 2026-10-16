@@ -55,32 +55,7 @@
       }
     }
   },
-  "options": {
-    "step": {
-      "init": {
-        "title": "Update intervals",
-        "data": {
-          "update_interval": "Default (seconds)",
-          "update_interval_charging": "While charging (seconds)",
-          "update_interval_parked": "While parked (seconds)"
-        }
-      }
-    }
-  },
-  "selector": {
-    "region": {
-      "options": {
-        "asia": "Asia",
-        "europe": "Europe"
-      }
-    }
-  },
   "entity": {
-    "number": {
-      "charge_limit": {
-        "name": "Charge limit"
-      }
-    },
     "binary_sensor": {
       "air_conditioning": {
         "name": "Air conditioning"
@@ -181,6 +156,11 @@
       },
       "trunk": {
         "name": "Trunk"
+      }
+    },
+    "number": {
+      "charge_limit": {
+        "name": "Charge limit"
       }
     },
     "select": {
@@ -336,6 +316,26 @@
     "time": {
       "battery_preheating_departure_time": {
         "name": "Battery preheating departure time"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "update_interval": "Default (seconds)",
+          "update_interval_charging": "While charging (seconds)",
+          "update_interval_parked": "While parked (seconds)"
+        },
+        "title": "Update intervals"
+      }
+    }
+  },
+  "selector": {
+    "region": {
+      "options": {
+        "asia": "Asia",
+        "europe": "Europe"
       }
     }
   }

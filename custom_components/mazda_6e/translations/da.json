@@ -55,32 +55,7 @@
       }
     }
   },
-  "options": {
-    "step": {
-      "init": {
-        "title": "Opdateringsintervaller",
-        "data": {
-          "update_interval": "Standard (sekunder)",
-          "update_interval_charging": "Under opladning (sekunder)",
-          "update_interval_parked": "Under parkering (sekunder)"
-        }
-      }
-    }
-  },
-  "selector": {
-    "region": {
-      "options": {
-        "asia": "Asien",
-        "europe": "Europa"
-      }
-    }
-  },
   "entity": {
-    "number": {
-      "charge_limit": {
-        "name": "Opladningsgrænse"
-      }
-    },
     "binary_sensor": {
       "air_conditioning": {
         "name": "Klimaanlæg"
@@ -181,6 +156,11 @@
       },
       "trunk": {
         "name": "Bagagerum"
+      }
+    },
+    "number": {
+      "charge_limit": {
+        "name": "Opladningsgrænse"
       }
     },
     "select": {
@@ -336,6 +316,26 @@
     "time": {
       "battery_preheating_departure_time": {
         "name": "Afgangstid for batteriforvarmning"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "update_interval": "Standard (sekunder)",
+          "update_interval_charging": "Under opladning (sekunder)",
+          "update_interval_parked": "Under parkering (sekunder)"
+        },
+        "title": "Opdateringsintervaller"
+      }
+    }
+  },
+  "selector": {
+    "region": {
+      "options": {
+        "asia": "Asien",
+        "europe": "Europa"
       }
     }
   }
