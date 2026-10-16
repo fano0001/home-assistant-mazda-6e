@@ -63,6 +63,18 @@
       }
     }
   },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Update intervals",
+        "data": {
+          "update_interval": "Default (seconds)",
+          "update_interval_charging": "While charging (seconds)",
+          "update_interval_parked": "While parked (seconds)"
+        }
+      }
+    }
+  },
   "entity": {
     "binary_sensor": {
       "air_conditioning": {

@@ -1,13 +1,26 @@
 import logging
 import asyncio
+import time
 
 from datetime import timedelta
 from collections.abc import Callable
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.exceptions import ConfigEntryAuthFailed
 
-from .const import DOMAIN, UPDATE_INTERVAL
-from .models import Mazda6eVehicle
+from .const import (
+    DOMAIN,
+    UPDATE_INTERVAL,
+    CONF_INTERVAL_DEFAULT,
+    CONF_INTERVAL_CHARGING,
+    CONF_INTERVAL_PARKED,
+    DEFAULT_INTERVAL_CHARGING,
+    DEFAULT_INTERVAL_PARKED,
+)
+from .models import Mazda6eVehicle, ChargeStatus, VehicleStatus
+
+CHARGING_STATES = {ChargeStatus.CHARGING.name, ChargeStatus.PAUSED.name}
+PARKED_STATES = {VehicleStatus.PARKED.name}
+PARKED_GRACE = 600
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -15,12 +28,18 @@ _LOGGER = logging.getLogger(__name__)
 class Mazda6eCoordinator(DataUpdateCoordinator):
     def __init__(self, hass, config_entry, mazda6e_api):
         """Initialize my coordinator."""
+        opts = config_entry.options
+        self._interval_default = opts.get(CONF_INTERVAL_DEFAULT, UPDATE_INTERVAL)
+        self._interval_charging = opts.get(CONF_INTERVAL_CHARGING, DEFAULT_INTERVAL_CHARGING)
+        self._interval_parked = opts.get(CONF_INTERVAL_PARKED, DEFAULT_INTERVAL_PARKED)
+        self._last_active: dict[int, float] = {}
+
         super().__init__(
             hass,
             logger=_LOGGER,
             name=DOMAIN,
             config_entry=config_entry,
-            update_interval=timedelta(seconds=UPDATE_INTERVAL),
+            update_interval=timedelta(seconds=self._interval_default),
         )
         self.api = mazda6e_api
         self._function_config: dict[int, set[str]] = {}
@@ -35,15 +54,15 @@ class Mazda6eCoordinator(DataUpdateCoordinator):
         return lock
 
     async def async_execute_control_command(
-        self,
-        vehicle_id: int,
-        function_code: str,
-        *,
-        params: dict | None = None,
-        require_security_code: bool = False,
-        max_attempts: int = 12,
-        interval_seconds: float = 2.0,
-        sign_omit_keys: set[str] | None = None,
+            self,
+            vehicle_id: int,
+            function_code: str,
+            *,
+            params: dict | None = None,
+            require_security_code: bool = False,
+            max_attempts: int = 12,
+            interval_seconds: float = 2.0,
+            sign_omit_keys: set[str] | None = None,
     ) -> dict:
         """Execute one control command and refresh coordinator data afterward."""
         lock = self._get_control_lock(vehicle_id)
@@ -63,11 +82,11 @@ class Mazda6eCoordinator(DataUpdateCoordinator):
         return result
 
     async def async_refresh_until(
-        self,
-        state_matches: Callable[[], bool],
-        *,
-        attempts: int = 10,
-        interval_seconds: float = 2.0,
+            self,
+            state_matches: Callable[[], bool],
+            *,
+            attempts: int = 10,
+            interval_seconds: float = 2.0,
     ) -> None:
         """Refresh until a control's state is visible in the vehicle status."""
         for attempt in range(attempts):
@@ -87,6 +106,39 @@ class Mazda6eCoordinator(DataUpdateCoordinator):
                 self._function_config[vehicle_id] = set()
 
         return self._function_config[vehicle_id]
+
+    # ------------------------------------------------------------------
+    # Dynamic update interval
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _is_charging(status: dict | None) -> bool:
+        raw = ((status or {}).get("charge") or {}).get("chargeStatus")
+        return ChargeStatus.safe_name(raw) in CHARGING_STATES
+
+    @staticmethod
+    def _is_parked(status: dict | None) -> bool:
+        raw = ((status or {}).get("vehicleStatus") or {}).get("status")
+        return VehicleStatus.safe_name(raw) in PARKED_STATES
+
+    def _select_interval(self, vehicle_status: dict) -> int:
+        now = time.monotonic()
+
+        seconds = []
+        for vehicle_id, data in vehicle_status.items():
+            status = data["status"]
+            if self._is_charging(status):
+                self._last_active[vehicle_id] = now
+                seconds.append(self._interval_charging)
+            elif self._is_parked(status):
+                idle = now - self._last_active.setdefault(vehicle_id, now)
+                seconds.append(
+                    self._interval_default if idle < PARKED_GRACE else self._interval_parked
+                )
+            else:
+                self._last_active[vehicle_id] = now
+                seconds.append(self._interval_default)
+        return min(seconds, default=self._interval_default)
 
     async def _async_update_data(self):
         """Fetch data from API"""
@@ -113,6 +165,11 @@ class Mazda6eCoordinator(DataUpdateCoordinator):
                 "vehicle": veh,
                 "status": status_response,
             }
+
+        new_interval = timedelta(seconds=self._select_interval(vehicle_status))
+        if new_interval != self.update_interval:
+            _LOGGER.debug("Update interval changed to %s", new_interval)
+            self.update_interval = new_interval
 
         _LOGGER.debug("vehicle_status: %s", vehicle_status)
         return vehicle_status

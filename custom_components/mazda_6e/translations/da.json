@@ -63,6 +63,18 @@
       }
     }
   },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opdateringsintervaller",
+        "data": {
+          "update_interval": "Standard (sekunder)",
+          "update_interval_charging": "Under opladning (sekunder)",
+          "update_interval_parked": "Under parkering (sekunder)"
+        }
+      }
+    }
+  },
   "entity": {
     "binary_sensor": {
       "front_left_door": {

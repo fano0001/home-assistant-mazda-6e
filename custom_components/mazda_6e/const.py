@@ -7,7 +7,13 @@ PUB_KEY = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCRYk7lZkHwHCJo8sSoKs5UuD/Jh9j7P
 
 DEVICE_NAME = "iPhone 17 Pro"
 
-UPDATE_INTERVAL = 60  # Sekunden
+CONF_INTERVAL_DEFAULT = "update_interval"
+CONF_INTERVAL_CHARGING = "update_interval_charging"
+CONF_INTERVAL_PARKED = "update_interval_parked"
+
+UPDATE_INTERVAL = 60
+DEFAULT_INTERVAL_CHARGING = 60
+DEFAULT_INTERVAL_PARKED = 60
 
 BASE_EU = "https://cma-m.iov.changanauto.com.de/cma-app-gw"
 BASE_ASIA = "https://cma.iov.changanauto.sg/cma-app-gw"
