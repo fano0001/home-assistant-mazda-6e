@@ -2,12 +2,16 @@ import asyncio
 import aiohttp
 import time
 import logging
+import re
+from contextlib import suppress
+from copy import deepcopy
 from collections.abc import Callable
 
 from .const import DEVICE_NAME, REGION_EUROPE, REGION_ASIA, BASE_EU, BASE_ASIA
 from .credential_crypto import decrypt_control_serial, encrypt_credential, sign_control_payload
 from .models import Mazda6eVehicle
-from .mqtt import MazdaMqttError, async_read_status
+from .mqtt import (MazdaMqttConnection, MazdaMqttError, _broker, _topic_groups,
+                   async_read_status, notification_topics)
 from homeassistant.exceptions import ConfigEntryAuthFailed
 
 _LOGGER = logging.getLogger(__name__)
@@ -37,6 +41,11 @@ class MazdaLoginError(Exception):
 class MazdaApiError(Exception):
     """Mazda rejected an authenticated API request."""
 
+    def __init__(self, message, *, code=None):
+        super().__init__(message)
+        value = str(code) if code is not None else ""
+        self.code = value if re.fullmatch(r"[A-Z0-9_]{1,64}", value) else None
+
 
 def now_ts():
     return str(int(time.time()))
@@ -64,12 +73,14 @@ class Mazda6EApi:
         self.control_pin = control_pin
         self.region = region
         self.token_update_callback = token_update_callback
+        self._mqtt_lock = asyncio.Lock()
+        self._mqtt_connections = {}
 
     async def _request(self, url: str, headers: dict, body: dict, retry: bool = True):
         """generic request method with token refresh handling"""
         async with self.session.post(url, headers=headers, json=body) as resp:
             if resp.status != 200:
-                raise MazdaApiError(f"Mazda API request failed with HTTP {resp.status}")
+                raise MazdaApiError(f"Mazda API request failed with HTTP {resp.status}", code=f"HTTP_{resp.status}")
             try:
                 raw = await resp.json()
             except (aiohttp.ContentTypeError, ValueError):
@@ -97,7 +108,7 @@ class Mazda6EApi:
             return await self._request(url, headers, body, retry=False)
         code = raw.get("code", "unknown")
         message = raw.get("msg", "unknown error")
-        raise MazdaApiError(f"Mazda API request rejected ({code}: {message})")
+        raise MazdaApiError(f"Mazda API request rejected ({code}: {message})", code=code)
 
     async def login_email_password(self, email_enc, password_enc):
         if not self.control_public_key:
@@ -304,16 +315,71 @@ class Mazda6EApi:
         return raw.get("data")
 
     async def _async_get_asia_vehicle_status(self, vehicle_id: int | str):
+        # Serialize snapshots and connection setup: reusing Mazda's login ID
+        # on a second connection would disconnect the persistent listener.
+        async with self._mqtt_lock:
+            active = self._mqtt_connections.get(vehicle_id)
+            if active is not None:
+                connection, config = active
+                try:
+                    return await connection.async_read_status(config)
+                except (MazdaMqttError, TimeoutError, OSError) as err:
+                    raise MazdaApiError("MQTT status read failed") from err
+            config, mqtt_token = await self.async_get_mqtt_config(vehicle_id)
+            try:
+                return await async_read_status(config, mqtt_token)
+            except MazdaMqttError as err:
+                raise MazdaApiError(str(err)) from err
+
+    async def async_get_mqtt_config(self, vehicle_id: int | str):
+        """Obtain regional broker configuration and a fresh MQTT credential."""
+        async with asyncio.timeout(30):
+            return await self._async_get_mqtt_config(vehicle_id)
+
+    async def _async_get_mqtt_config(self, vehicle_id: int | str):
         headers = self._ca_headers()
-        ca_base = "https://cma-m.iov.changanauto.sg"
+        ca_base = (
+            "https://cma-m.iov.changanauto.sg" if self.region == REGION_ASIA
+            else "https://ca-m.iov.changanauto.com.de"
+        )
         device_id = str(self.deviceid or "").replace("-", "")
         if len(device_id) != 32 or any(char not in "0123456789abcdefABCDEF" for char in device_id):
-            raise MazdaApiError("Asia MQTT requires a 32-character device ID")
+            raise MazdaApiError("MQTT requires a 32-character device ID")
+
+        connection_body = {
+            "tuid": "", "carId": str(vehicle_id), "deviceId": device_id, "deviceType": "1",
+        }
+        if self.region == REGION_EUROPE:
+            functions = await self._request(
+                f"{ca_base}/user-apigw/vot-connect-conf-center/api/device/appGetCarConfFunc",
+                headers, {"carId": str(vehicle_id)},
+            )
+
+            def cloud_device(value):
+                if isinstance(value, dict):
+                    # The verified European getConnConf exchange uses a THU
+                    # device from the car's cloud function config, not the app UUID.
+                    if (value.get("msgType") == "commands"
+                            and value.get("serviceCode") == "THU_Service"
+                            and isinstance(value.get("deviceId"), str)
+                            and value["deviceId"]):
+                        return value["deviceId"]
+                    return cloud_device(value.get("children"))
+                if isinstance(value, list):
+                    for child in value:
+                        if found := cloud_device(child):
+                            return found
+                return None
+
+            european_device = cloud_device(functions.get("data"))
+            if european_device is None:
+                raise MazdaApiError("European MQTT cloud device is missing", code="MQTT_NO_CLOUD_DEVICE")
+            connection_body = {"deviceType": "1", "deviceId": european_device}
 
         config_response = await self._request(
             f"{ca_base}/user-apigw/vot-connect-conf-center/api/device/getConnConf",
             headers,
-            {"tuid": "", "carId": str(vehicle_id), "deviceId": device_id, "deviceType": "1"},
+            connection_body,
         )
         token_response = await self._request(
             f"{ca_base}/user-apigw/vot-connect-auth-center/api/auth/getAuthTokenByUserId",
@@ -324,11 +390,77 @@ class Mazda6EApi:
         token_data = token_response.get("data")
         mqtt_token = token_data.get("authToken") if isinstance(token_data, dict) else None
         if not isinstance(config, dict) or not isinstance(mqtt_token, str) or not mqtt_token:
-            raise MazdaApiError("Asia MQTT bootstrap returned incomplete data")
+            raise MazdaApiError("MQTT bootstrap returned incomplete data")
+        return config, mqtt_token
+
+    async def async_listen_updates(self, vehicle_ids, on_update, on_ready):
+        """Listen until disconnected; the coordinator owns reconnect/backoff.
+
+        Vehicles sharing a broker/login identity share one physical connection.
+        Individual read configurations and notification routing stay per vehicle.
+        """
+        connections = []
+        waiters = []
         try:
-            return await async_read_status(config, mqtt_token)
-        except MazdaMqttError as err:
-            raise MazdaApiError(str(err)) from err
+            async with self._mqtt_lock:
+                groups = {}
+                for vehicle_id in vehicle_ids:
+                    config, password = await self.async_get_mqtt_config(vehicle_id)
+                    topics = notification_topics(config)
+                    if not topics:
+                        raise MazdaMqttError("MQTT notification topics are missing")
+                    login_pub, _, _ = _topic_groups(config)
+                    group_key = (*_broker(config), login_pub)
+                    group = groups.setdefault(group_key, {
+                        "config": deepcopy(config), "password": password,
+                        "vehicles": {}, "topics": {},
+                    })
+                    group["vehicles"][vehicle_id] = config
+                    group["password"] = password
+                    for topic in topics:
+                        group["topics"].setdefault(topic, set()).add(vehicle_id)
+                    if len(group["vehicles"]) > 1:
+                        group["config"]["mqttConnectionInfos"][0]["topicInfos"].extend(
+                            config["mqttConnectionInfos"][0]["topicInfos"],
+                        )
+
+                for group in groups.values():
+                    def notify(topic, patch, routing=group["topics"]):
+                        for vehicle_id in routing.get(topic, ()):
+                            on_update(vehicle_id, patch)
+
+                    connection = MazdaMqttConnection(group["config"], group["password"], notify)
+                    connections.append(connection)
+                    await connection.async_connect()
+                    for vehicle_id, config in group["vehicles"].items():
+                        self._mqtt_connections[vehicle_id] = (connection, config)
+                on_ready()
+            waiters = [asyncio.create_task(c.async_wait_disconnected()) for c in connections]
+            if not waiters:
+                raise MazdaMqttError("No vehicles available for MQTT")
+            done, _ = await asyncio.wait(waiters, return_when=asyncio.FIRST_COMPLETED)
+            for task in done:
+                task.result()
+            raise MazdaMqttError("MQTT notification connection ended")
+        finally:
+            # Clear mappings and close sessions while holding the same lock as
+            # Asia reads, before a polling snapshot can open another connection.
+            async with self._mqtt_lock:
+                self._mqtt_connections.clear()
+                for connection in connections:
+                    await connection.async_close()
+            for task in waiters:
+                task.cancel()
+                with suppress(asyncio.CancelledError, Exception):
+                    await task
+
+    @property
+    def mqtt_report_diagnostics(self) -> list[dict]:
+        connections = dict.fromkeys(connection for connection, _ in self._mqtt_connections.values())
+        return [
+            {"connection": index, "subscriptions": connection.notification_diagnostics}
+            for index, connection in enumerate(connections, 1)
+        ]
 
     async def async_get_battery_preheating_plan(self, vehicle_id: int) -> dict | None:
         """Return the captured battery-preheating plan for a vehicle."""

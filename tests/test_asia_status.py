@@ -162,10 +162,16 @@ def test_normalize_verified_fields(modules):
         "airStatus": 1, "BattACChrgInCurr": "6.5", "chargDeltMins": 45,
         "lastUpdatedAt": 123456,
     })
-    assert status["vehicleStatus"] == {"soc": 72, "drvMileage": 310, "totalMileage": 1200.5}
+    assert status["vehicleStatus"] == {
+        "soc": 72, "drvMileage": 310, "totalMileage": 1200.5,
+        "powerStatus": None, "steeringWheelHeater": None, "status": None,
+    }
     assert status["door"]["doors"] == [1, 0, 0, 1]
     assert status["window"]["windows"] == [0, 1, 0, 0]
-    assert status["hvac"] == {"insideTemp": 235, "remoteTemp": 210, "acStatus": 1}
+    assert status["hvac"] == {
+        "insideTemp": 235, "remoteTemp": 210, "acStatus": 1,
+        "insideHumidity": None, "insidePm25": None, "defrostStatus": None,
+    }
     assert status["charge"]["acChargeCurrent"] == 6.5
     assert status["charge"]["remainChargeTime"] == 45
     assert status["lastUpdatedAt"] == 123456
@@ -173,14 +179,20 @@ def test_normalize_verified_fields(modules):
 
 def test_normalize_does_not_guess_enums(modules):
     _, _, mqtt = modules
-    status = mqtt.normalize_status({"ChrgSts": 6, "driverDoorLock": 1})
-    assert "chargeStatus" not in status["charge"]
-    assert "driverLock" not in status["door"]
+    status = mqtt.normalize_status({"ChrgSts": 6, "driverDoorLock": 2})
+    assert status["charge"]["chargeStatus"] is None
+    assert status["door"]["driverLock"] is None
 
 
-def test_charge_time_sentinel_is_unknown(modules):
+def test_charge_time_sentinel_matches_https_and_clears_previous_estimate(modules):
+    from custom_components.mazda_6e.helpers.validators import remaining_charge_time
+
     _, _, mqtt = modules
-    assert mqtt.normalize_status({"chargDeltMins": 8191})["charge"]["remainChargeTime"] is None
+    patch = mqtt.status_patch({"chargDeltMins": 8191})
+    status = mqtt.apply_status_patch({"charge": {"remainChargeTime": 45}}, patch)
+    assert status["charge"]["remainChargeTime"] == 8191
+    assert remaining_charge_time(status["charge"]["remainChargeTime"]) is None
+    assert mqtt.status_patch({"chargDeltMins": None}) == {}
 
 
 def test_asia_uses_bootstrap_and_mqtt(modules, monkeypatch):

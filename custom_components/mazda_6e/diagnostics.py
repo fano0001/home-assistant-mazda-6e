@@ -14,7 +14,8 @@ from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
-TO_REDACT_CONFIG = [CONF_EMAIL, CONF_PASSWORD, 'email_enc', 'refresh', 'token', 'deviceid']
+TO_REDACT_CONFIG = [CONF_EMAIL, CONF_PASSWORD, 'email_enc', 'refresh', 'token', 'deviceid',
+                    'control_pin', 'control_private_key']
 TO_REDACT_DATA = ["vin", "vehicle_id", "token", "access_token", "refresh_token", "session_id"]
 
 
@@ -39,6 +40,10 @@ async def async_get_config_entry_diagnostics(
     diagnostics = {
         "info": async_redact_data(config_entry.data, TO_REDACT_CONFIG),
         "vehicles": vehicles,
+        "mqtt": {
+            **data_entry.mqtt_diagnostics,
+            "connections": data_entry.api.mqtt_report_diagnostics,
+        },
     }
 
     return diagnostics
