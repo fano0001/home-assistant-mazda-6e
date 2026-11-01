@@ -92,7 +92,7 @@ def _tire_pressure(position: str) -> Mazda6eSensorDescription:
 
 # Recent trips kept in the attributes, small enough for the recorder's attribute limit.
 _RECENT_TRIPS = 30
-_RECENT_TRIP_KEYS = ("start", "end", "duration_min", "distance_km", "soc_used", "energy_kwh", "consumption_kwh_100km", "estimated")
+_RECENT_TRIP_KEYS = ("start", "end", "duration_min", "distance_km", "soc_used", "energy_kwh", "consumption_kwh_100km", "estimated", "recovered")
 
 
 def _last_trip_attrs(data: dict) -> dict:

@@ -78,7 +78,7 @@ class Mazda6eCoordinator(DataUpdateCoordinator):
 
         key = str(vehicle_id)
         tracker = self._trackers.setdefault(key, TripTracker())
-        before = tracker.as_dict()
+        before = tracker.save_key()
         trip = tracker.update(vehicle_status.get("status"), odometer, soc, dt_util.now(), self._capacity())
 
         if trip:
@@ -86,7 +86,7 @@ class Mazda6eCoordinator(DataUpdateCoordinator):
             trip = self.trips[key][0]
             self.hass.bus.async_fire(EVENT_TRIP, {"vehicle_id": vehicle_id, **trip})
             _LOGGER.info("Vehicle %s finished a %s km trip", vehicle_id, trip["distance_km"])
-        if trip or tracker.as_dict() != before:
+        if trip or tracker.save_key() != before:
             self._trip_store.async_delay_save(self._trip_data, 10)
 
     def _track_charge(self, vehicle_id: int, status_response: dict | None) -> None:

@@ -85,7 +85,7 @@ def test_flickers_and_missing_data_do_not_make_trips():
         (11, None, None, None),
         (12, PARKED, None, 50),
     ]) == []
-    assert tracker.as_dict() == {"start": None, "stop": None}
+    assert tracker.as_dict()["start"] is None and tracker.as_dict()["stop"] is None
 
 
 def test_an_unfinished_trip_survives_a_restart():
@@ -96,6 +96,53 @@ def test_an_unfinished_trip_survives_a_restart():
     trips = feed(restored, [(11, PARKED, 205.0, 69)])
 
     assert [trip["distance_km"] for trip in trips] == [5.0]
+
+
+def test_a_trip_driven_while_offline_is_recovered():
+    tracker = MODULE.TripTracker()
+    feed(tracker, [(0, PARKED, 1456.7, 34)])
+
+    restored = MODULE.TripTracker(tracker.as_dict())
+    trips = feed(restored, [(260, PARKED, 1547.3, 9), (261, PARKED, 1547.3, 9)])
+
+    assert len(trips) == 1
+    trip = trips[0]
+    assert trip["recovered"] is True
+    assert trip["distance_km"] == 90.6
+    assert trip["soc_used"] == 25
+    assert trip["duration_min"] is None and trip["avg_speed_kmh"] is None
+    assert trip["start"] == T0.isoformat()
+
+
+def test_a_trip_still_running_after_an_outage_starts_before_it():
+    trips = feed(MODULE.TripTracker(), [
+        (0, PARKED, 800.0, 60),
+        (90, DRIVING, 830.0, 55),
+        (100, PARKED, 840.0, 53),
+        (106, PARKED, 840.0, 53),
+    ])
+
+    assert [(trip["distance_km"], trip["recovered"]) for trip in trips] == [(40.0, True)]
+
+
+def test_a_departure_between_two_polls_is_not_recovered():
+    trips = feed(MODULE.TripTracker(), [
+        (0, PARKED, 800.0, 60),
+        (1, DRIVING, 801.0, 60),
+        (20, PARKED, 815.0, 57),
+        (26, PARKED, 815.0, 57),
+    ])
+
+    assert len(trips) == 1 and "recovered" not in trips[0]
+
+
+def test_a_parked_restart_saves_nothing_new():
+    tracker = MODULE.TripTracker()
+    feed(tracker, [(0, PARKED, 500.0, 70)])
+    key = tracker.save_key()
+    feed(tracker, [(1, PARKED, 500.0, 70), (300, PARKED, 500.0, 70)])
+
+    assert tracker.save_key() == key
 
 
 def test_soc_is_optional():
