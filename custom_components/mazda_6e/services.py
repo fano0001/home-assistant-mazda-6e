@@ -15,6 +15,7 @@ from .helpers.charge_plan import (
     charge_plans,
     first_charge_plan,
     format_plan_time,
+    PREHEATING_TOO_SOON,
     plan_time_zone,
     upcoming_end_data,
 )
@@ -103,6 +104,8 @@ def async_setup_services(hass: HomeAssistant) -> None:
         if item.get("battery_preheating_plan") is not None:
             raise ServiceValidationError("A battery-preheating plan already exists; edit or delete it instead")
         end_data = upcoming_end_data(dt_util.now(), call.data[ATTR_DEPARTURE_TIME])
+        if end_data is None:
+            raise ServiceValidationError(PREHEATING_TOO_SOON)
         try:
             await coordinator.api.async_add_battery_preheating(vehicle_id, end_data)
         except COMMAND_ERRORS as err:

@@ -15,6 +15,7 @@ from .const import DOMAIN
 from .entity import Mazda6eEntity
 from .helpers.charge_plan import (
     END_DATA_FORMAT,
+    PREHEATING_TOO_SOON,
     charge_plans,
     first_charge_plan,
     format_plan_time,
@@ -96,12 +97,15 @@ class Mazda6eBatteryPreheatingDepartureTime(Mazda6eEntity, TimeEntity):
         plan = self._plan
         if plan is None:
             raise HomeAssistantError("Mazda did not return a battery-preheating plan")
+        end_data = upcoming_end_data(dt_util.now(), value)
+        if end_data is None:
+            raise HomeAssistantError(PREHEATING_TOO_SOON)
         try:
             await self.coordinator.api.async_update_battery_preheating(
                 self.vehicle.vehicle_id,
                 plan["planId"],
                 plan["planType"],
-                upcoming_end_data(dt_util.now(), value),
+                end_data,
             )
         except (KeyError, MazdaApiError, RuntimeError, TimeoutError, TypeError, ValueError) as err:
             raise HomeAssistantError(f"Mazda rejected the {self.name} command: {err}") from err

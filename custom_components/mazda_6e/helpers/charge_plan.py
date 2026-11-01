@@ -3,6 +3,9 @@
 from datetime import datetime, time, timedelta
 
 END_DATA_FORMAT = "%Y%m%d%H%M%S"
+# The car refuses a battery-preheating departure closer than this.
+PREHEATING_LEAD = timedelta(minutes=20)
+PREHEATING_TOO_SOON = "Battery preheating needs a departure time at least 20 minutes from now"
 
 
 def charge_plans(vehicle_data: dict | None) -> list[dict] | None:
@@ -69,6 +72,7 @@ def next_departure(now: datetime, departure: time) -> datetime:
     return candidate if candidate > now else candidate + timedelta(days=1)
 
 
-def upcoming_end_data(now: datetime, departure: time) -> str:
-    """Format the next occurrence of a departure time; Mazda rejects plans dated in the past."""
-    return next_departure(now, departure).strftime(END_DATA_FORMAT)
+def upcoming_end_data(now: datetime, departure: time) -> str | None:
+    """Format the next occurrence of a departure time, or None when it is too soon to preheat."""
+    upcoming = next_departure(now, departure)
+    return upcoming.strftime(END_DATA_FORMAT) if upcoming - now >= PREHEATING_LEAD else None

@@ -18,3 +18,5 @@ def test_next_departure_rolls_over_to_tomorrow():
     assert MODULE.next_departure(now, time(7, 30)) == datetime(2026, 10, 6, 7, 30, tzinfo=now.tzinfo)
     assert MODULE.next_departure(now, time(12, 0)) == datetime(2026, 10, 6, 12, 0, tzinfo=now.tzinfo)
     assert MODULE.upcoming_end_data(now, time(7, 30)) == "20261006073000"
+    assert MODULE.upcoming_end_data(now, time(12, 20)) == "20261005122000"
+    assert MODULE.upcoming_end_data(now, time(12, 15)) is None

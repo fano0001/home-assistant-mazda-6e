@@ -97,6 +97,27 @@ def test_departure_time_state_and_action(monkeypatch):
     coordinator.async_refresh_until.assert_awaited_once()
 
 
+def test_departure_time_too_soon_is_refused_locally(monkeypatch):
+    """The car needs 20 minutes to preheat, so a closer departure never reaches Mazda."""
+    module = load_time_module(monkeypatch)
+    api = SimpleNamespace(control_private_key="private-key", async_update_battery_preheating=AsyncMock())
+    coordinator = SimpleNamespace(
+        api=api,
+        data={123: {"battery_preheating_plan": {"planId": 7, "planType": 0, "endData": "20260928053000"}}},
+        last_update_success=True,
+        async_refresh_until=AsyncMock(),
+    )
+    entity = module.Mazda6eBatteryPreheatingDepartureTime(coordinator, SimpleNamespace(vehicle_id=123))
+
+    try:
+        asyncio.run(entity.async_set_value(time(12, 10)))
+    except Exception as err:
+        assert "20 minutes" in str(err)
+    else:
+        raise AssertionError("expected the departure to be refused")
+    api.async_update_battery_preheating.assert_not_awaited()
+
+
 def make_schedule_coordinator(plan):
     return SimpleNamespace(
         api=SimpleNamespace(control_private_key="private-key", async_modify_charge_plan=AsyncMock()),

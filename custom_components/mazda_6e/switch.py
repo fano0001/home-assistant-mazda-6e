@@ -14,7 +14,7 @@ from homeassistant.util import dt as dt_util
 from .api import MazdaApiError
 from .const import DOMAIN
 from .entity import Mazda6eEntity
-from .helpers.charge_plan import END_DATA_FORMAT, charge_plans, first_charge_plan, upcoming_end_data
+from .helpers.charge_plan import END_DATA_FORMAT, PREHEATING_TOO_SOON, charge_plans, first_charge_plan, upcoming_end_data
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -131,12 +131,17 @@ class Mazda6eBatteryPreheatingSwitch(Mazda6eEntity, SwitchEntity):
     async def async_turn_on(self, **kwargs) -> None:
         plan = self._require_plan()
         try:
-            departure = datetime.strptime(plan["endData"], END_DATA_FORMAT).time()
+            end_data = upcoming_end_data(dt_util.now(), datetime.strptime(plan["endData"], END_DATA_FORMAT).time())
+        except (KeyError, TypeError, ValueError) as err:
+            raise HomeAssistantError(f"Mazda returned an unreadable battery-preheating plan: {err}") from err
+        if end_data is None:
+            raise HomeAssistantError(PREHEATING_TOO_SOON)
+        try:
             await self.coordinator.api.async_update_battery_preheating(
                 self.vehicle.vehicle_id,
                 plan["planId"],
                 plan["planType"],
-                upcoming_end_data(dt_util.now(), departure),
+                end_data,
             )
         except (KeyError, MazdaApiError, RuntimeError, TimeoutError, ValueError) as err:
             raise HomeAssistantError(f"Mazda rejected the {self.name} command: {err}") from err
