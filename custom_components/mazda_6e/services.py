@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from datetime import datetime, time, timedelta
-
 import voluptuous as vol
 
 from homeassistant.core import HomeAssistant, ServiceCall
@@ -13,7 +11,13 @@ from homeassistant.util import dt as dt_util
 
 from .api import MazdaApiError
 from .const import DOMAIN
-from .helpers.charge_plan import charge_plans, first_charge_plan, format_plan_time, plan_time_zone
+from .helpers.charge_plan import (
+    charge_plans,
+    first_charge_plan,
+    format_plan_time,
+    plan_time_zone,
+    upcoming_end_data,
+)
 
 ATTR_DEVICE_ID = "device_id"
 ATTR_START_TIME = "start_time"
@@ -50,12 +54,6 @@ def _resolve_vehicle(hass: HomeAssistant, device_id: str):
             if str(vehicle_id) == vehicle_ids[0]:
                 return coordinator, vehicle_id, item
     raise ServiceValidationError("The Mazda 6e vehicle is not loaded")
-
-
-def next_departure(now: datetime, departure: time) -> datetime:
-    """Return the next local occurrence of a departure time."""
-    candidate = now.replace(hour=departure.hour, minute=departure.minute, second=0, microsecond=0)
-    return candidate if candidate > now else candidate + timedelta(days=1)
 
 
 def async_setup_services(hass: HomeAssistant) -> None:
@@ -104,7 +102,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
             raise ServiceValidationError("This vehicle does not report battery-preheating plans")
         if item.get("battery_preheating_plan") is not None:
             raise ServiceValidationError("A battery-preheating plan already exists; edit or delete it instead")
-        end_data = next_departure(dt_util.now(), call.data[ATTR_DEPARTURE_TIME]).strftime("%Y%m%d%H%M%S")
+        end_data = upcoming_end_data(dt_util.now(), call.data[ATTR_DEPARTURE_TIME])
         try:
             await coordinator.api.async_add_battery_preheating(vehicle_id, end_data)
         except COMMAND_ERRORS as err:

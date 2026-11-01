@@ -1,6 +1,7 @@
 """Switch controls for Mazda 6e vehicles."""
 
 from dataclasses import dataclass
+from datetime import datetime
 
 from homeassistant.components.switch import SwitchEntity, SwitchEntityDescription
 from homeassistant.config_entries import ConfigEntry
@@ -8,11 +9,12 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.util import dt as dt_util
 
 from .api import MazdaApiError
 from .const import DOMAIN
 from .entity import Mazda6eEntity
-from .helpers.charge_plan import charge_plans, first_charge_plan
+from .helpers.charge_plan import END_DATA_FORMAT, charge_plans, first_charge_plan, upcoming_end_data
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -129,11 +131,12 @@ class Mazda6eBatteryPreheatingSwitch(Mazda6eEntity, SwitchEntity):
     async def async_turn_on(self, **kwargs) -> None:
         plan = self._require_plan()
         try:
+            departure = datetime.strptime(plan["endData"], END_DATA_FORMAT).time()
             await self.coordinator.api.async_update_battery_preheating(
                 self.vehicle.vehicle_id,
                 plan["planId"],
                 plan["planType"],
-                plan["endData"],
+                upcoming_end_data(dt_util.now(), departure),
             )
         except (KeyError, MazdaApiError, RuntimeError, TimeoutError, ValueError) as err:
             raise HomeAssistantError(f"Mazda rejected the {self.name} command: {err}") from err

@@ -68,7 +68,7 @@ def load_time_module(monkeypatch):
 
 
 def test_departure_time_state_and_action(monkeypatch):
-    """Keep the server-provided date and replace only its time component."""
+    """A stale plan date is replaced with the next occurrence of the new time."""
     module = load_time_module(monkeypatch)
     api = SimpleNamespace(
         control_private_key="private-key",
@@ -92,7 +92,7 @@ def test_departure_time_state_and_action(monkeypatch):
     asyncio.run(entity.async_set_value(time(6, 0)))
 
     api.async_update_battery_preheating.assert_awaited_once_with(
-        123, 7, 0, "20260928060000",
+        123, 7, 0, "20261006060000",
     )
     coordinator.async_refresh_until.assert_awaited_once()
 

@@ -14,12 +14,14 @@ from .api import MazdaApiError
 from .const import DOMAIN
 from .entity import Mazda6eEntity
 from .helpers.charge_plan import (
+    END_DATA_FORMAT,
     charge_plans,
     first_charge_plan,
     format_plan_time,
     parse_plan_time,
     plan_end_enabled,
     plan_time_zone,
+    upcoming_end_data,
 )
 
 BATTERY_PREHEATING_DEPARTURE_TIME_DESCRIPTION = TimeEntityDescription(
@@ -78,7 +80,7 @@ class Mazda6eBatteryPreheatingDepartureTime(Mazda6eEntity, TimeEntity):
         if plan is None:
             return None
         try:
-            return datetime.strptime(plan["endData"], "%Y%m%d%H%M%S").time()
+            return datetime.strptime(plan["endData"], END_DATA_FORMAT).time()
         except (KeyError, TypeError, ValueError):
             return None
 
@@ -95,18 +97,11 @@ class Mazda6eBatteryPreheatingDepartureTime(Mazda6eEntity, TimeEntity):
         if plan is None:
             raise HomeAssistantError("Mazda did not return a battery-preheating plan")
         try:
-            current = datetime.strptime(plan["endData"], "%Y%m%d%H%M%S")
-            updated = current.replace(
-                hour=value.hour,
-                minute=value.minute,
-                second=value.second,
-                microsecond=0,
-            ).strftime("%Y%m%d%H%M%S")
             await self.coordinator.api.async_update_battery_preheating(
                 self.vehicle.vehicle_id,
                 plan["planId"],
                 plan["planType"],
-                updated,
+                upcoming_end_data(dt_util.now(), value),
             )
         except (KeyError, MazdaApiError, RuntimeError, TimeoutError, TypeError, ValueError) as err:
             raise HomeAssistantError(f"Mazda rejected the {self.name} command: {err}") from err

@@ -1,6 +1,8 @@
 """Helpers for the charging schedule plans reported in charge.chargePlanList."""
 
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
+
+END_DATA_FORMAT = "%Y%m%d%H%M%S"
 
 
 def charge_plans(vehicle_data: dict | None) -> list[dict] | None:
@@ -59,3 +61,14 @@ def describe_plan(plan: dict) -> dict:
         "start_time": start.strftime("%H:%M") if start else None,
         "end_time": end.strftime("%H:%M") if end and plan_end_enabled(plan) else None,
     }
+
+
+def next_departure(now: datetime, departure: time) -> datetime:
+    """Return the next local occurrence of a departure time."""
+    candidate = now.replace(hour=departure.hour, minute=departure.minute, second=0, microsecond=0)
+    return candidate if candidate > now else candidate + timedelta(days=1)
+
+
+def upcoming_end_data(now: datetime, departure: time) -> str:
+    """Format the next occurrence of a departure time; Mazda rejects plans dated in the past."""
+    return next_departure(now, departure).strftime(END_DATA_FORMAT)
