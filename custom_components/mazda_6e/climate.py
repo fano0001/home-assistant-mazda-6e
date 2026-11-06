@@ -24,9 +24,9 @@ DESCRIPTION = ClimateEntityDescription(
 
 
 async def async_setup_entry(
-    hass: HomeAssistant,
-    entry: ConfigEntry,
-    async_add_entities: AddConfigEntryEntitiesCallback,
+        hass: HomeAssistant,
+        entry: ConfigEntry,
+        async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up cabin climate entities."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
@@ -44,7 +44,7 @@ class Mazda6eClimate(Mazda6eEntity, ClimateEntity):
     _attr_min_temp = 16
     _attr_max_temp = 30
     _attr_target_temperature_step = 0.5
-    _attr_temperature_unit = UnitOfTemperature.CELSIUS
+    _attr_native_temperature_unit = UnitOfTemperature.CELSIUS
 
     def __init__(self, coordinator, vehicle) -> None:
         super().__init__(coordinator, vehicle, DESCRIPTION)
@@ -61,14 +61,14 @@ class Mazda6eClimate(Mazda6eEntity, ClimateEntity):
             return None
 
     @property
-    def current_temperature(self) -> float | None:
+    def native_current_temperature(self) -> float | None:
         try:
             return temperature(self.vehicle_data["status"]["hvac"]["insideTemp"])
         except (KeyError, TypeError):
             return None
 
     @property
-    def target_temperature(self) -> float | None:
+    def native_target_temperature(self) -> float | None:
         try:
             return temperature(self.vehicle_data["status"]["hvac"]["remoteTemp"])
         except (KeyError, TypeError):
@@ -79,30 +79,30 @@ class Mazda6eClimate(Mazda6eEntity, ClimateEntity):
         return super().available and bool(self.coordinator.api.control_private_key)
 
     async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
-        await self._async_set_climate(hvac_mode == HVACMode.HEAT_COOL, self.target_temperature or 21)
+        await self._async_set_climate(hvac_mode == HVACMode.HEAT_COOL, self.native_target_temperature or 21)
 
     async def async_set_temperature(self, **kwargs) -> None:
         await self._async_set_climate(True, kwargs["temperature"])
 
-    async def _async_set_climate(self, enabled: bool, target_temperature: float) -> None:
+    async def _async_set_climate(self, enabled: bool, native_target_temperature: float) -> None:
         try:
             await self.coordinator.api.async_set_air_conditioner(
-                self.vehicle.vehicle_id, enabled, target_temperature,
+                self.vehicle.vehicle_id, enabled, native_target_temperature,
             )
         except (MazdaApiError, RuntimeError, TimeoutError) as err:
             raise HomeAssistantError(f"Mazda rejected the climate command: {err}") from err
         await self.coordinator.async_refresh_until(
-            lambda: self._climate_state_matches(enabled, target_temperature),
+            lambda: self._climate_state_matches(enabled, native_target_temperature),
         )
 
-    def _climate_state_matches(self, enabled: bool, target_temperature: float) -> bool:
+    def _climate_state_matches(self, enabled: bool, native_target_temperature: float) -> bool:
         expected_mode = HVACMode.HEAT_COOL if enabled else HVACMode.OFF
         if self.hvac_mode != expected_mode:
             return False
         if not enabled:
             return True
-        current_temperature = self.target_temperature
+        native_current_temperature = self.native_target_temperature
         return (
-            current_temperature is not None
-            and abs(current_temperature - target_temperature) < 0.1
+                native_current_temperature is not None
+                and abs(native_current_temperature - native_target_temperature) < 0.1
         )
