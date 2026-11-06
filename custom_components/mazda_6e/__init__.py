@@ -58,6 +58,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     )
 
     coordinator = Mazda6eCoordinator(hass, config_entry, mazda6e_api)
+    coordinator.options_snapshot = dict(config_entry.options)
     await coordinator.async_load_trips()
 
     try:
@@ -78,6 +79,10 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
 
 
 async def _async_options_updated(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    coordinator = hass.data.get(DOMAIN, {}).get(entry.entry_id)
+    # Token refreshes rewrite entry data too; only a real options change needs a reload.
+    if coordinator is not None and dict(entry.options) == coordinator.options_snapshot:
+        return
     await hass.config_entries.async_reload(entry.entry_id)
 
 
