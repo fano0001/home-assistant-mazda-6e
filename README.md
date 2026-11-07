@@ -2,7 +2,7 @@
 
 This component has been created to be used with Home Assistant.
 
-Mazda 6e presents a possibility to connect your Mazda 6e vehicle to Home Assistant.  
+Mazda 6e presents a possibility to connect your Mazda 6e vehicle to Home Assistant.
 This integration accepts your email and password and encrypts them internally. A device ID is generated automatically and retained for reauthentication. Enter the verification code sent by email when requested. Plaintext credentials and passwords are not saved in the config entry.
 
 The integration exposes a lock entity for the vehicle doors. Mazda's six-digit Control Passcode can be entered during setup or later through **Reconfigure**. The lock entity remains unavailable until the passcode and control key have been configured. Normal Home Assistant lock and unlock actions do not ask for a code.
@@ -17,7 +17,7 @@ The integration exposes a lock entity for the vehicle doors. Mazda's six-digit C
 
 ## Manual
 
-Copy the `mazda_6e` directory, from `custom_components` in this repository,  
+Copy the `mazda_6e` directory, from `custom_components` in this repository,
 and place it inside your Home Assistant Core installation's `custom_components` directory. Restart Home Assistant prior to moving on to the `Setup` section.
 
 `Note`: If installing manually, in order to be alerted about new releases, you will need to subscribe to releases from this repository
