@@ -24,22 +24,6 @@ class MazdaMqttError(Exception):
     """Raised when a read-only MQTT status exchange fails."""
 
 
-_ENUM_FIELDS = (
-    "frontDefrostStatus", "frontDefrosterSwitch", "rearDefrosterSwitch",
-    "steeringWheelHeating", "driverDoorLock", "passengerDoorLock",
-    "leftRearDoorLock", "rightRearDoorLock", "chargeStatus",
-    "batteryChargeStatus", "ChrgSts", "acChargeGunConnectionState",
-    "dcDhargeGunConnectionState", "powerStatusFeedBack",
-    "driverSeatHeatStatus", "passengerSeatHeatStatus",
-    "driverSeatAirStatus", "passengerSeatAirStatus",
-    "leftBackSeatHeatStatus", "rightBackSeatHeatStatus",
-    "leftBackSeatVentilateStatus", "rightBackSeatVentilateStatus",
-    "lowBeam", "highBeam", "positionLamp", "turnLndicatorLeft", "turnLndicatorRight",
-    "lfPressureWarning", "rfPressureWarning", "lrPressureWarning", "rrPressureWarning",
-    "carStatus", "vehicleSpeed", "chargeCurrentVal", "obcChrgInpAcI", "totalCurrent",
-)
-
-
 def _mqtt_string(value: str) -> bytes:
     encoded = value.encode()
     return struct.pack("!H", len(encoded)) + encoded
@@ -288,7 +272,7 @@ def _params(payload: Mapping[str, Any], key: str) -> dict[str, Any]:
 
 
 def notification_topics(config: Mapping[str, Any]) -> list[str]:
-    """Use only report/event subscriptions supplied by Mazda, never invented topics."""
+    """Return report/event subscriptions supplied by Mazda."""
     infos = config.get("mqttConnectionInfos") or []
     if not infos or not isinstance(infos[0], dict):
         return []
@@ -402,24 +386,8 @@ def status_patch(values: Mapping[str, Any]) -> dict[str, Any]:
     return patch
 
 
-def _mapped_field_names(patch: Mapping[str, Any]) -> list[str]:
-    names = []
-    for key, value in patch.items():
-        if isinstance(value, dict):
-            names.extend(f"{key}.{name}" for name in _mapped_field_names(value))
-        elif isinstance(value, list):
-            names.extend(f"{key}[{index}]" for index, item in enumerate(value) if item is not None)
-        else:
-            names.append(key)
-    return sorted(names)
-
-
 class MazdaMqttConnection:
-    """One authenticated connection, with one reader and correlated read requests.
-
-    Reports use the same encrypted service envelope as status responses. Only
-    already mapped fields are exposed; unknown fields never invent HA states.
-    """
+    """Authenticated MQTT session for push reports and status reads."""
 
     HEARTBEAT_INTERVAL = 20
 
@@ -440,7 +408,7 @@ class MazdaMqttConnection:
 
     @property
     def notification_diagnostics(self) -> list[dict]:
-        """Counters and selected numeric states; no credentials or device IDs."""
+        """Report counts and timing per subscription."""
         now = monotonic()
         result = []
         device_ids = sorted(filter(None, {_topic_device_id(topic) for topic in self._observed_topics}))
@@ -453,47 +421,19 @@ class MazdaMqttConnection:
                 "kind": "properties/get/res" if topic.endswith("/properties/get/res") else "/".join(topic.split("/")[-2:]),
                 "reports": stats.get("reports", 0),
                 "mapped_reports": stats.get("mapped_reports", 0),
-                "envelope_fields": stats.get("envelope_fields", []),
-                "fields_seen": dict(stats.get("fields_seen", {})),
-                "mapped_fields_seen": dict(stats.get("mapped_fields_seen", {})),
                 "seconds_since_report": round(now - stats["last_report"], 1) if stats else None,
                 "last_interval_seconds": stats.get("last_interval_seconds"),
-                "enum_reports": [
-                    {"age_seconds": round(now - report["received"], 1),
-                     "lastUpdatedAt": report["lastUpdatedAt"],
-                     "values": dict(report["values"])}
-                    for report in stats.get("enum_reports", [])
-                ],
             })
         return result
 
-    def _record_report(self, topic, payload, values, patch) -> None:
+    def _record_report(self, topic, patch) -> None:
         now = monotonic()
-        stats = self._report_stats.setdefault(topic, {
-            "reports": 0, "mapped_reports": 0, "fields_seen": {}, "mapped_fields_seen": {},
-        })
+        stats = self._report_stats.setdefault(topic, {"reports": 0, "mapped_reports": 0})
         previous = stats.get("last_report")
         stats["last_interval_seconds"] = round(now - previous, 3) if previous is not None else None
         stats["last_report"] = now
         stats["reports"] += 1
         stats["mapped_reports"] += bool(patch)
-        stats["envelope_fields"] = sorted(key for key in payload if isinstance(key, str) and len(key) <= 80)[:64]
-        enum_values = {
-            field: number for field in _ENUM_FIELDS
-            if (number := _number(values.get(field))) is not None
-        }
-        if enum_values:
-            reports = stats.setdefault("enum_reports", [])
-            reports.append({
-                "received": now, "lastUpdatedAt": normalize_status(values)["lastUpdatedAt"],
-                "values": enum_values,
-            })
-            del reports[:-32]
-        for target, names in (("fields_seen", values), ("mapped_fields_seen", _mapped_field_names(patch))):
-            counts = stats[target]
-            for name in names:
-                if isinstance(name, str) and len(name) <= 80 and (name in counts or len(counts) < 256):
-                    counts[name] = counts.get(name, 0) + 1
 
     @property
     def connected(self) -> bool:
@@ -598,7 +538,7 @@ class MazdaMqttConnection:
                 if topic in self._observed_topics and not first & 0x01:
                     values = _params(payload, self._secret_key)
                     patch = status_patch(values)
-                    self._record_report(topic, payload, values, patch)
+                    self._record_report(topic, patch)
                     if patch and topic in self._notifications:
                         self._on_notification(topic, patch)
         except asyncio.CancelledError:
@@ -681,7 +621,7 @@ def _enum(value: Any, mapping: Mapping[int, int]) -> int | None:
 
 
 def normalize_status(values: Mapping[str, Any]) -> dict[str, Any]:
-    """Map verified EU/Asia MQTT fields to the HTTPS status model."""
+    """Map supported EU/Asia MQTT fields to the shared status model."""
     updated = _first(values, "lastUpdatedTime", "lastUpdatedAt", "latestDate")
     if isinstance(updated, str):
         numeric = _number(updated)

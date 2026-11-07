@@ -96,27 +96,19 @@ def test_unverified_enums_and_invalid_measurements_preserve_https_state(modules)
     }) == {}
 
 
-def test_enum_diagnostics_are_bounded_numeric_and_do_not_apply_states(modules):
+def test_notification_diagnostics_keep_only_counts_and_timing(modules):
     _, _, mqtt = modules
     client = mqtt.MazdaMqttConnection(push_config(), "password", lambda *_: None)
     topic = "$vdp/device-one/properties/report"
-    for index in range(40):
-        values = {
-            "frontDefrostStatus": 3, "steeringWheelHeating": "3",
-            "driverDoorLock": "private-value", "chargeStatus": "NaN",
-            "token": "secret", "unknown": "private-value",
-            "latestDate": "2026-10-18T13:00:00Z",
-        }
-        client._record_report(topic, {"rs": "encrypted"}, values, mqtt.status_patch(values))
+    for _ in range(40):
+        client._record_report(topic, {"vehicleStatus": {"soc": 72}})
     stats = next(item for item in client.notification_diagnostics if item["reports"])
-    assert stats["mapped_reports"] == 0
-    assert len(stats["enum_reports"]) == 32
-    assert stats["enum_reports"][-1]["values"] == {
-        "frontDefrostStatus": 3, "steeringWheelHeating": 3,
+    assert stats["reports"] == stats["mapped_reports"] == 40
+    assert set(stats) == {
+        "subscription", "device", "kind", "reports", "mapped_reports",
+        "seconds_since_report", "last_interval_seconds",
     }
-    assert stats["enum_reports"][-1]["lastUpdatedAt"] == 1792328400000
-    assert "private-value" not in json.dumps(stats)
-    assert "secret" not in json.dumps(stats)
+    assert not any(name in json.dumps(stats) for name in ("soc", "password", "device-one"))
 
 
 @pytest.mark.parametrize(("values", "expected"), [
@@ -347,8 +339,6 @@ def test_persistent_reports_update_directly_and_snapshots_reuse_connection(modul
             assert stats["kind"] == suffix
             assert stats["reports"] == 2
             assert stats["mapped_reports"] == 1
-            assert stats["fields_seen"] == {"unknown": 1, "soc": 1, "passengerDoor": 1}
-            assert stats["mapped_fields_seen"] == {"door.doors[1]": 1, "vehicleStatus.soc": 1}
             serialized = json.dumps(client.notification_diagnostics)
             assert "private-payload-value" not in serialized
             assert "device-one" not in serialized
