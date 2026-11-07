@@ -229,16 +229,17 @@ updates. No additional status requests are sent for this measurement.
 
 The first field-level observation contained only `latestDate` and `connectStatus`.
 Such a connectivity report previously passed the timestamp mapping and inflated
-the mapped-report count. Timestamp-only patches are now ignored, so they cannot
-make older vehicle telemetry appear fresh. Received-message diagnostics still
+the mapped-report count. Timestamp-only patches are ignored. Connection-only
+patches now update online status without advancing the telemetry timestamp.
+Received-message diagnostics still
 count them and list their field names. The earlier mapped-report count by itself
 is therefore not evidence of climate, charging or lock telemetry delivery.
 
 ### Further observed states
 
 The saved EU MQTT response and HTTPS status also establish the following codes.
-These translations are shared by EU and Asia; they have not been observed on an
-Asia vehicle. Codes outside this table are still omitted from patches.
+These initial observations are shared by EU and Asia. Current coverage and the
+inferred mappings added after the two-week capture are in `MQTT_REMAINING.md`.
 
 | MQTT | HTTPS | Observed translation |
 | --- | --- | --- |
@@ -259,8 +260,9 @@ DC state must also be present and known to be disconnected.
 The rear-seat value 6 is not interpreted as level 3. The saved MQTT response
 contains 6 for rear heat and ventilation while HTTPS contains 0. Likewise,
 `totalCurrent=10` is not copied to `chargeCurrent`, which was 0 in HTTPS.
-Speed units, coordinate validity, active seat levels, lamp-on codes, charging
-states and warning codes still require conversion evidence.
+Seat levels, lamp-on codes and charging mappings were extended in later
+observations; see `MQTT_REMAINING.md` for the remaining gaps. Speed and location
+are outside the current mapping work.
 
 Numeric report history now includes seat, lamp and tire-warning codes, car
 status, speed and the candidate current fields. It records ordinary reports;

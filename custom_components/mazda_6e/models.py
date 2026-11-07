@@ -25,6 +25,7 @@ class ChargeConnectionStatus(IntEnum):
 class ChargeStatus(IntEnum):
     UNKNOWN = -1
     NOT_CHARGING = 0
+    WAITING = 1
     COMPLETED = 4
     CHARGING = 6
     PAUSED = 7

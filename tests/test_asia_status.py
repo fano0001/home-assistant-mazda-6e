@@ -163,7 +163,7 @@ def test_normalize_verified_fields(modules):
         "lastUpdatedAt": 123456,
     })
     assert status["vehicleStatus"] == {
-        "soc": 72, "drvMileage": 310, "totalMileage": 1200.5,
+        "connectStatus": None, "soc": 72, "drvMileage": 310, "totalMileage": 1200.5,
         "powerStatus": None, "steeringWheelHeater": None, "status": None,
     }
     assert status["door"]["doors"] == [1, 0, 0, 1]

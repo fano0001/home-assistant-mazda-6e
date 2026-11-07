@@ -1,6 +1,6 @@
 # Missing and partial MQTT mappings
 
-Checked against `normalize_status()` in `mqtt.py` on October 31, 2026.
+Checked against `normalize_status()` in `mqtt.py` on November 7, 2026.
 This list describes what the integration applies to entities. Receiving a field
 in an MQTT message does not mean that the field has a usable mapping.
 
@@ -8,10 +8,7 @@ in an MQTT message does not mean that the field has a usable mapping.
 
 | State | Internal field | What is missing |
 | --- | --- | --- |
-| Vehicle online status | `vehicleStatus.connectStatus` | `connectStatus` is not applied; connection-only reports must not make vehicle telemetry appear newer |
-| Total charging current | `charge.chargeCurrent` | Source field and scaling; an observed `totalCurrent=10` corresponded to HTTPS `chargeCurrent=0` |
-| Cockpit temperature | `hvac.consTempCockpit` | No established MQTT source; `constantTempCabinStatus` is not documented as a temperature |
-| Window opening percentage | `window.openDegree` | Units, scaling and position order |
+| Cockpit field | `hvac.consTempCockpit` | Meaning and MQTT source are unresolved; its existing temperature label is not established by observations |
 | Battery-preheating plan: enabled state and time | `battery_preheating_plan` | No MQTT mapping; the plan is fetched through a separate HTTPS request |
 
 ## Partially mapped states
@@ -19,8 +16,8 @@ in an MQTT message does not mean that the field has a usable mapping.
 | State | What MQTT can update | What remains unresolved |
 | --- | --- | --- |
 | Tire warnings | Raw code 0 maps to status 0 | Warning codes; tire pressure itself is already mapped |
-| Charging status | Raw `chargeStatus=3` maps to not charging | Charging, completed, paused and other codes |
-| Charge connection | Raw DC code 0 maps to disconnected; overall disconnected requires both AC and DC to be 0 | Connected and other codes; AC=0 alone does not establish overall connection status |
+| Charging status | `batteryChargeStatus` codes 0/1/4 map to HTTPS 0/6/1; without that field, `chargeStatus` codes 1/4 map to 6/1 | Completed, paused and other codes; code 1 uses the inferred waiting label |
+| Charge connection | AC or DC code 1 maps to connected; overall disconnected requires both to be 0; DC 0/1 maps directly | DC-connected code is inferred; other codes remain unresolved |
 | Power status | Raw `powerStatusFeedBack=0/2` maps to internal 0/2 | Code 1 and other codes |
 | AC charging current | `BattACChrgInCurr` and its alias | No conversion from `obcChrgInpAcI`; only zero has been compared |
 
@@ -65,6 +62,39 @@ mode is heating when heat is active and ventilation when ventilation is active.
 If both are active in the same report, their levels update without choosing a
 combined mode. Setting the combined mode to off requires both heat and
 ventilation to be 0 in the report. Unknown codes, including 6, are ignored.
+
+## November charging observations
+
+The November 3-4 AC charging session established `chargeCurrentVal` as the
+source for `charge.chargeCurrent`: 302 nonzero equal comparisons at 43-45 A
+and two comparisons differing by 1 A, all with identical report timestamps.
+It does not populate the separate AC-current field, which stayed at zero.
+AC connector code 1 matched HTTPS connected status in 101 comparisons.
+
+`batteryChargeStatus` takes priority: raw 0 maps to HTTPS 0 (800 comparisons),
+raw 1 to HTTPS 6 (53), and raw 4 to HTTPS 1 (48). HTTPS code 1 occurred while
+connected before charging and is now labelled waiting. This label is inferred
+from the session rather than a documented enum. Completed and paused were not observed.
+Without `batteryChargeStatus`, raw `chargeStatus` 1/4 maps to HTTPS 6/1.
+Raw `chargeStatus=3` is no longer translated: it matched both HTTPS 0 and 1.
+Unknown primary codes and ambiguous partial reports preserve previous values.
+
+## Inferred mappings enabled on November 7
+
+The user approved the following interpretations pending further observations:
+
+- The four window-degree fields populate `window.openDegree` directly in
+  driver/passenger/left-rear/right-rear order. Values 0 and 10 have matching
+  samples; other values and positions use the same encoding by inference.
+  Values are passed through without scaling; their physical unit is unresolved.
+- `connectStatus` 0/1 maps to offline/online. Only 1 has been compared against
+  HTTPS. A connection-only push updates that field without advancing the
+  vehicle telemetry timestamp. Broker connection loss does not set the car offline.
+- DC connector code 1 means connected, matching the observed AC 0/1 encoding.
+  Overall disconnected still requires both connector states to be 0.
+- HTTPS charging status 1 is labelled waiting, based on the connected interval
+  with zero charging current before charging began. MQTT `batteryChargeStatus=4`
+  maps to that value; raw code 4 must not be mistaken for HTTPS completed code 4.
 
 ## Unavailable API data: outside the current mapping work
 

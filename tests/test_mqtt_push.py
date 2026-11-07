@@ -140,7 +140,7 @@ def test_defrost_translation(values, expected, modules):
 def test_observed_enum_values_translate_to_https_values(modules):
     _, _, mqtt = modules
     assert mqtt.status_patch({
-        "steeringWheelHeating": 1, "chargeStatus": 3,
+        "steeringWheelHeating": 1, "batteryChargeStatus": 0, "chargeStatus": 3,
         "driverDoorLock": 0, "passengerDoorLock": 0, "powerStatusFeedBack": 2,
     }) == {
         "vehicleStatus": {"steeringWheelHeater": 0, "powerStatus": 2},
@@ -200,7 +200,10 @@ def test_incomplete_seat_or_plug_report_does_not_invent_combined_state(modules):
     assert mqtt.status_patch({
         "driverSeatHeatStatus": 0, "driverSeatAirStatus": 3,
         "acChargeGunConnectionState": 0, "dcDhargeGunConnectionState": 1,
-    }) == {"seat": {"leftFront": {"heatStatus": 0, "ventStatus": 3, "mode": 2}}}
+    }) == {
+        "seat": {"leftFront": {"heatStatus": 0, "ventStatus": 3, "mode": 2}},
+        "charge": {"chargeConStatus": 1, "dcChargeGunConnectStatus": 1},
+    }
 
 
 def test_remaining_unverified_codes_do_not_replace_https_values(modules):
@@ -212,8 +215,8 @@ def test_remaining_unverified_codes_do_not_replace_https_values(modules):
         "driverSeatAirStatus": 6, "passengerSeatAirStatus": 4,
         "lfPressureWarning": 1, "rfPressureWarning": 2,
         "lrPressureWarning": 3, "rrPressureWarning": 255,
-        "acChargeGunConnectionState": 1, "dcDhargeGunConnectionState": 1,
-        "totalCurrent": "NaN", "chargeCurrentVal": 0, "vehicleSpeed": 20,
+        "acChargeGunConnectionState": 2, "dcDhargeGunConnectionState": 2,
+        "totalCurrent": "NaN", "chargeCurrentVal": "NaN", "vehicleSpeed": 20,
     }) == {}
 
 
@@ -429,7 +432,12 @@ def test_numeric_timestamp_strings_and_nonfinite_values(modules):
 
 def test_connection_report_does_not_refresh_vehicle_telemetry_timestamp(modules):
     _, _, mqtt = modules
-    assert mqtt.status_patch({"latestDate": "2026-10-18T13:00:00Z", "connectStatus": 1}) == {}
+    current = {"lastUpdatedAt": 100, "vehicleStatus": {"soc": 72, "connectStatus": 0}}
+    patch = mqtt.status_patch({"latestDate": "2026-10-18T13:00:00Z", "connectStatus": 1})
+    assert patch == {"vehicleStatus": {"connectStatus": 1}}
+    assert mqtt.apply_status_patch(current, patch) == {
+        "lastUpdatedAt": 100, "vehicleStatus": {"soc": 72, "connectStatus": 1},
+    }
 
 
 def test_rejected_subscription_closes_transport(modules, monkeypatch):
@@ -978,3 +986,133 @@ def test_unknown_high_beam_code_preserves_previous_state(value, modules):
     patch = mqtt.status_patch({"highBeam": value})
     assert patch == {}
     assert mqtt.apply_status_patch(original, patch) == original
+
+
+@pytest.mark.parametrize("values,expected", [
+    ({"batteryChargeStatus": 0, "chargeStatus": 1}, 0),
+    ({"batteryChargeStatus": 1, "chargeStatus": 3}, 6),
+    ({"batteryChargeStatus": 4, "chargeStatus": 3}, 1),
+    ({"chargeStatus": 1}, 6),
+    ({"chargeStatus": 4}, 1),
+    ({"batteryChargeStatus": "1"}, 6),
+])
+def test_charging_status_translation(values, expected, modules):
+    _, _, mqtt = modules
+    assert mqtt.status_patch(values) == {"charge": {"chargeStatus": expected}}
+
+
+
+@pytest.mark.parametrize("values", [
+    {"chargeStatus": 3}, {"chargeStatus": 2},
+    {"batteryChargeStatus": 9, "chargeStatus": 1},
+    {"batteryChargeStatus": True},
+])
+def test_unresolved_charging_status_preserves_previous_state(values, modules):
+    _, _, mqtt = modules
+    original = {"charge": {"chargeStatus": 1}}
+    patch = mqtt.status_patch(values)
+    assert patch == {}
+    assert mqtt.apply_status_patch(original, patch) == original
+
+
+
+def test_charging_session_partial_reports(modules):
+    _, _, mqtt = modules
+    status = {"charge": {"chargeStatus": 0, "chargeConStatus": 0, "chargeCurrent": 0}}
+    reports = [
+        ({"batteryChargeStatus": 4, "chargeStatus": 3,
+          "acChargeGunConnectionState": 1}, {"chargeStatus": 1, "chargeConStatus": 1, "chargeCurrent": 0}),
+        ({"chargeStatus": 3}, {"chargeStatus": 1, "chargeConStatus": 1, "chargeCurrent": 0}),
+        ({"batteryChargeStatus": 1, "chargeStatus": 3,
+          "chargeCurrentVal": 44}, {"chargeStatus": 6, "chargeConStatus": 1, "chargeCurrent": 44}),
+        ({"acChargeGunConnectionState": 0}, {"chargeStatus": 6, "chargeConStatus": 1, "chargeCurrent": 44}),
+        ({"batteryChargeStatus": 0, "chargeStatus": 1, "chargeCurrentVal": 0,
+          "acChargeGunConnectionState": 0, "dcDhargeGunConnectionState": 0},
+         {"chargeStatus": 0, "chargeConStatus": 0, "chargeCurrent": 0, "dcChargeGunConnectStatus": 0}),
+    ]
+    for values, expected in reports:
+        status = mqtt.apply_status_patch(status, mqtt.status_patch(values))
+        assert status["charge"] == expected
+
+
+
+@pytest.mark.parametrize("current", [0, 43, 44, 45, "44"])
+def test_observed_total_charging_current(current, modules):
+    _, _, mqtt = modules
+    assert mqtt.status_patch({"chargeCurrentVal": current}) == {
+        "charge": {"chargeCurrent": int(current)},
+    }
+
+
+
+@pytest.mark.parametrize("current", [None, True, "NaN", "invalid"])
+def test_invalid_total_charging_current_is_ignored(current, modules):
+    _, _, mqtt = modules
+    assert mqtt.status_patch({"chargeCurrentVal": current}) == {}
+
+
+
+@pytest.mark.parametrize("values,expected", [
+    ({"acChargeGunConnectionState": 1}, {"chargeConStatus": 1}),
+    ({"acChargeGunConnectionState": 1, "dcDhargeGunConnectionState": 0},
+     {"chargeConStatus": 1, "dcChargeGunConnectStatus": 0}),
+    ({"acChargeGunConnectionState": 0}, {}),
+    ({"acChargeGunConnectionState": 0, "dcDhargeGunConnectionState": 0},
+     {"chargeConStatus": 0, "dcChargeGunConnectStatus": 0}),
+])
+def test_observed_ac_connection(values, expected, modules):
+    _, _, mqtt = modules
+    assert mqtt.status_patch(values) == ({"charge": expected} if expected else {})
+
+
+
+@pytest.mark.parametrize("value", [0, 1])
+def test_connection_status_with_telemetry_keeps_report_timestamp(value, modules):
+    _, _, mqtt = modules
+    assert mqtt.status_patch({"latestDate": 200, "connectStatus": value, "soc": 71}) == {
+        "lastUpdatedAt": 200, "vehicleStatus": {"connectStatus": value, "soc": 71},
+    }
+
+
+
+@pytest.mark.parametrize("value", [0, 1])
+def test_connection_only_report_does_not_redate_cached_fields(value, modules):
+    _, _, mqtt = modules
+    updates = mqtt.MqttStatusUpdates()
+    updates.record(mqtt.status_patch({"latestDate": 200, "soc": 71}))
+    updates.record(mqtt.status_patch({"latestDate": 300, "connectStatus": value}))
+    result = updates.reconcile({"lastUpdatedAt": 250, "vehicleStatus": {"soc": 70}})
+    assert result == {"lastUpdatedAt": 250, "vehicleStatus": {"soc": 70}}
+
+
+
+@pytest.mark.parametrize("raw,index", [
+    ("leftAnteriorWindowDegree", 0), ("rightAnteriorWindowDegree", 1),
+    ("leftRearWindowDegree", 2), ("rightRearWindowDegree", 3),
+])
+@pytest.mark.parametrize("value", [0, 10, 20, 30, 50, 100])
+def test_window_open_degree_updates_only_reported_position(raw, index, value, modules):
+    _, _, mqtt = modules
+    original = {"window": {"openDegree": [10, 20, 30, 40]}}
+    result = mqtt.apply_status_patch(original, mqtt.status_patch({raw: value}))
+    expected = [10, 20, 30, 40]
+    expected[index] = value
+    assert result == {"window": {"openDegree": expected}}
+
+
+
+@pytest.mark.parametrize("values,expected", [
+    ({"dcDhargeGunConnectionState": 1}, {"chargeConStatus": 1, "dcChargeGunConnectStatus": 1}),
+    ({"acChargeGunConnectionState": 0, "dcDhargeGunConnectionState": 1},
+     {"chargeConStatus": 1, "dcChargeGunConnectStatus": 1}),
+    ({"dcDhargeGunConnectionState": 0}, {"dcChargeGunConnectStatus": 0}),
+])
+def test_dc_connection_uses_shared_zero_one_codes(values, expected, modules):
+    _, _, mqtt = modules
+    assert mqtt.status_patch(values) == {"charge": expected}
+
+
+
+def test_precharge_status_has_waiting_label(modules):
+    models = sys.modules["asia_test.models"]
+    assert models.ChargeStatus.safe_name(1) == "waiting"

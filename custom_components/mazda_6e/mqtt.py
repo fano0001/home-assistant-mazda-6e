@@ -396,6 +396,9 @@ def status_patch(values: Mapping[str, Any]) -> dict[str, Any]:
     # timestamp must not make the cached vehicle telemetry appear fresh.
     if not any(isinstance(value, dict) and value for value in patch.values()):
         return {}
+    fields = {key: value for key, value in patch.items() if key != "lastUpdatedAt"}
+    if fields.keys() == {"vehicleStatus"} and fields["vehicleStatus"].keys() == {"connectStatus"}:
+        patch.pop("lastUpdatedAt", None)
     return patch
 
 
@@ -730,11 +733,15 @@ def normalize_status(values: Mapping[str, Any]) -> dict[str, Any]:
             "ventStatus": vent,
             "mode": mode,
         }
-    ac_plug = _enum(values.get("acChargeGunConnectionState"), {0: 0})
-    dc_plug = _enum(values.get("dcDhargeGunConnectionState"), {0: 0})
+    charge_status = _enum(values.get("batteryChargeStatus"), {0: 0, 1: 6, 4: 1})
+    if values.get("batteryChargeStatus") is None:
+        charge_status = _enum(values.get("chargeStatus"), {1: 6, 4: 1})
+    ac_plug = _enum(values.get("acChargeGunConnectionState"), {0: 0, 1: 1})
+    dc_plug = _enum(values.get("dcDhargeGunConnectionState"), {0: 0, 1: 1})
     return {
         "lastUpdatedAt": _number(updated),
         "vehicleStatus": {
+            "connectStatus": _enum(values.get("connectStatus"), {0: 0, 1: 1}),
             "soc": _number(_first(values, "soc", "socDsp", "remainPower")),
             "drvMileage": _number(_first(values, "remainedPowerMile", "totalResidualMileage")),
             "totalMileage": _number(values.get("totalOdometer")),
@@ -752,6 +759,11 @@ def normalize_status(values: Mapping[str, Any]) -> dict[str, Any]:
         "window": {"windows": [
             _number(values.get("diverWindow")), _number(values.get("passengerWindow")),
             _number(values.get("leftRearWindow")), _number(values.get("rightRearWindow")),
+        ], "openDegree": [
+            _number(values.get("leftAnteriorWindowDegree")),
+            _number(values.get("rightAnteriorWindowDegree")),
+            _number(values.get("leftRearWindowDegree")),
+            _number(values.get("rightRearWindowDegree")),
         ]},
         "tire": tires,
         "seat": seats,
@@ -772,9 +784,10 @@ def normalize_status(values: Mapping[str, Any]) -> dict[str, Any]:
             "insidePm25": _number(values.get("pm25")),
         },
         "charge": {
-            "chargeStatus": _enum(values.get("chargeStatus"), {3: 0}),
+            "chargeStatus": charge_status,
             "maxSocPercent": _number(values.get("chargeSoc")),
-            "chargeConStatus": 0 if ac_plug == 0 and dc_plug == 0 else None,
+            "chargeConStatus": 1 if ac_plug == 1 or dc_plug == 1 else 0 if ac_plug == 0 and dc_plug == 0 else None,
+            "chargeCurrent": _number(values.get("chargeCurrentVal")),
             "dcChargeGunConnectStatus": dc_plug,
             "acChargeCurrent": _number(_first(values, "BattACChrgInCurr", "battACChrgInCurr")),
             "dcChargeCurrent": _number(_first(values, "BattDCChrgInCurr", "battDCChrgInCurr", "totalCurrent")),
