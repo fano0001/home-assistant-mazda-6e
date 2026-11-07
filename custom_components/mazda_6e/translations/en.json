@@ -201,6 +201,7 @@
           "charging": "charging",
           "completed": "completed",
           "not_charging": "Not charging",
+          "waiting": "Waiting to charge",
           "paused": "paused",
           "unknown": "unknown"
         }

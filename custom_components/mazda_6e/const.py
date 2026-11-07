@@ -7,7 +7,8 @@ PUB_KEY = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCRYk7lZkHwHCJo8sSoKs5UuD/Jh9j7P
 
 DEVICE_NAME = "iPhone 17 Pro"
 
-UPDATE_INTERVAL = 60  # Sekunden
+UPDATE_INTERVAL = 15 * 60  # Full reconciliation, independent of MQTT reports.
+FALLBACK_UPDATE_INTERVAL = 60
 
 BASE_EU = "https://cma-m.iov.changanauto.com.de/cma-app-gw"
 BASE_ASIA = "https://cma.iov.changanauto.sg/cma-app-gw"

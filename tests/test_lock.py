@@ -23,12 +23,14 @@ def load_lock_module(monkeypatch):
 
     modules = {name: ModuleType(name) for name in (
         "homeassistant", "homeassistant.components", "homeassistant.components.lock",
-        "homeassistant.config_entries", "homeassistant.core", "homeassistant.helpers",
+        "homeassistant.config_entries", "homeassistant.core", "homeassistant.helpers", "homeassistant.exceptions",
         "homeassistant.helpers.device_registry", "homeassistant.helpers.entity_platform",
-        "homeassistant.helpers.update_coordinator", "lock_test", "lock_test.const",
+        "homeassistant.helpers.update_coordinator", "lock_test", "lock_test.const", "lock_test.api",
     )}
     modules["lock_test"].__path__ = [str(ROOT)]
     modules["lock_test.const"].DOMAIN = "mazda_6e"
+    modules["lock_test.api"].MazdaApiError = type("MazdaApiError", (Exception,), {})
+    modules["homeassistant.exceptions"].HomeAssistantError = type("HomeAssistantError", (Exception,), {})
     modules["homeassistant.components.lock"].LockEntity = object
     modules["homeassistant.config_entries"].ConfigEntry = object
     modules["homeassistant.core"].HomeAssistant = object
@@ -58,7 +60,7 @@ def test_lock_state_availability_and_actions(monkeypatch):
         api=api,
         data={123: {"status": {"door": {"driverLock": 0, "passengerLock": 0}}}},
         last_update_success=True,
-        async_request_refresh=AsyncMock(),
+        async_refresh_until=AsyncMock(),
     )
     entity = module.Mazda6eDoorLock(coordinator, vehicle)
     assert entity.is_locked is True
@@ -74,4 +76,4 @@ def test_lock_state_availability_and_actions(monkeypatch):
     asyncio.run(run())
     api.async_unlock.assert_awaited_once_with(123)
     api.async_lock.assert_awaited_once_with(123)
-    assert coordinator.async_request_refresh.await_count == 2
+    assert coordinator.async_refresh_until.await_count == 2

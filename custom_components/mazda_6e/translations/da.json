@@ -201,6 +201,7 @@
           "charging": "Oplader",
           "completed": "Færdig",
           "not_charging": "Oplader ikke",
+          "waiting": "Afventer opladning",
           "paused": "Sat på pause",
           "unknown": "Ukendt"
         }
