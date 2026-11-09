@@ -4,6 +4,7 @@ from hashlib import sha256
 from math import isfinite
 
 from homeassistant.components import persistent_notification
+from homeassistant.helpers import device_registry as dr
 
 from .const import DOMAIN
 
@@ -40,7 +41,12 @@ class TireNotifications:
         language = self.hass.config.language.split("-")[0]
         text = _TEXT.get(language, _TEXT["en"])
         identity = sha256(f"{self.entry_id}:{vehicle_id}".encode()).hexdigest()[:16]
-        name = getattr(vehicle, "car_name", None) or getattr(vehicle, "model_name", None) or "Mazda 6e"
+        device = next((
+            device for device in dr.async_entries_for_config_entry(dr.async_get(self.hass), self.entry_id)
+            if (DOMAIN, str(vehicle_id)) in device.identifiers
+        ), None)
+        name = (device.name_by_user or device.name) if device else None
+        name = name or getattr(vehicle, "car_name", None) or getattr(vehicle, "model_name", None) or "Mazda 6e"
         tires = (status or {}).get("tire") or {}
         for index, wheel in enumerate(_WHEELS):
             tire = tires.get(wheel) or {}
@@ -56,7 +62,7 @@ class TireNotifications:
             pressure = tire.get("pressure")
             if isinstance(pressure, bool) or not isinstance(pressure, (int, float)) or not isfinite(pressure):
                 pressure = None
-            value = (code, pressure)
+            value = (code, pressure, name)
             if self._last.get(notification_id) == value:
                 continue
             title = f"{name}: {text['low'] if code == 2 else text['warning']} - {text['wheels'][index]}"

@@ -589,6 +589,10 @@ def coordinator_context(modules, monkeypatch):
     components.persistent_notification = notifications
     monkeypatch.setitem(sys.modules, "homeassistant.components", components)
     monkeypatch.setitem(sys.modules, "homeassistant.components.persistent_notification", notifications)
+    registry = ModuleType("homeassistant.helpers.device_registry")
+    registry.async_get = Mock(return_value=object())
+    registry.async_entries_for_config_entry = Mock(return_value=[])
+    monkeypatch.setitem(sys.modules, "homeassistant.helpers.device_registry", registry)
     load_module(monkeypatch, "asia_test.tire_notifications", "tire_notifications.py")
     coordinator = load_module(monkeypatch, "asia_test.coordinator", "coordinator.py")
 

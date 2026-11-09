@@ -57,6 +57,7 @@ The integration does not keep MQTT payload histories or write research files.
 Each vehicle/wheel has a stable persistent-notification ID. Tire status 1 or 2
 creates a warning in Home Assistant's notification panel. Code 2 is shown as low
 tire pressure; code 1 has a generic warning because its meaning is unresolved.
+The title uses the HA device name, preferring a user-assigned name.
 The message includes the last reported pressure when available. English, Danish
 and German follow the HA server language; other languages use English.
 

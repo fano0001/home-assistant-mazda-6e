@@ -70,6 +70,8 @@ class Mazda6eCoordinator(DataUpdateCoordinator):
     def async_start(self) -> None:
         """Start push subscriptions and independent reconciliation timers."""
         self._mqtt_restart.clear()
+        for vehicle_id, entry in (self.data or {}).items():
+            self._tire_notifications.update(vehicle_id, entry["vehicle"], entry["status"])
         self._unsub_timers = [
             async_track_time_interval(
                 self.hass, self._async_periodic_refresh, timedelta(seconds=UPDATE_INTERVAL),

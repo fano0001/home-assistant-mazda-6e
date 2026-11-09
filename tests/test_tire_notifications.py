@@ -18,6 +18,13 @@ def notifier(modules, monkeypatch):
     components.persistent_notification = notifications
     monkeypatch.setitem(sys.modules, "homeassistant.components", components)
     monkeypatch.setitem(sys.modules, "homeassistant.components.persistent_notification", notifications)
+    registry = ModuleType("homeassistant.helpers.device_registry")
+    registry.async_get = Mock(return_value=object())
+    registry.async_entries_for_config_entry = Mock(return_value=[])
+    monkeypatch.setitem(sys.modules, "homeassistant.helpers.device_registry", registry)
+    helpers = ModuleType("homeassistant.helpers")
+    helpers.device_registry = registry
+    monkeypatch.setitem(sys.modules, "homeassistant.helpers", helpers)
     module = load_module(monkeypatch, "asia_test.tire_notifications", "tire_notifications.py")
     hass = SimpleNamespace(config=SimpleNamespace(language="en"))
     return module.TireNotifications(hass, "entry-one"), notifications, module
@@ -90,3 +97,24 @@ def test_notification_language(notifier, language, label, number):
     manager.update(1, None, {"tire": {"rightFront": {"status": 2, "pressure": 216}}})
     assert label in api.async_create.call_args.kwargs["title"]
     assert number in api.async_create.call_args.args[1]
+
+
+def test_device_name_and_user_rename_update_existing_notification(notifier):
+    manager, api, _ = notifier
+    registry = sys.modules["homeassistant.helpers.device_registry"]
+    vehicle = SimpleNamespace(car_name="API nickname", model_name="Mazda 6e")
+    status = {"tire": {"rightFront": {"status": 2, "pressure": 216}}}
+    manager.update(1, vehicle, status)
+    first_id = api.async_create.call_args.kwargs["notification_id"]
+    device = SimpleNamespace(identifiers={("mazda_6e", "1")}, name_by_user=None, name="Garage car")
+    registry.async_entries_for_config_entry.return_value = [
+        SimpleNamespace(identifiers={("mazda_6e", "2")}, name_by_user="Other car", name="Wrong"), device,
+    ]
+    manager.update(1, vehicle, status)
+    assert api.async_create.call_args.kwargs["title"].startswith("Garage car:")
+    device.name_by_user = "Takumi"
+    manager.update(1, vehicle, status)
+    assert api.async_create.call_args.kwargs["title"].startswith("Takumi:")
+    assert api.async_create.call_args.kwargs["notification_id"] == first_id
+    registry.async_entries_for_config_entry.assert_called_with(registry.async_get.return_value, "entry-one")
+    assert api.async_create.call_count == 3
