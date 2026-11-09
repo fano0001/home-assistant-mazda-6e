@@ -52,6 +52,11 @@ Diagnostics contain connection/fallback state, refresh intervals, report counts
 and timing per subscription. Counters reset when the connection is rebuilt.
 The integration does not keep MQTT payload histories or write research files.
 
+Tire-pressure sensors expose a readable `status` attribute (0: OK, 2: low
+pressure, other/missing codes: unknown), following the HA server language.
+The raw value remains in `status_code`; automations comparing numeric codes
+should use that attribute. Sensor pressure values are unchanged.
+
 ## Tire warning notifications
 
 Each vehicle/wheel has a stable persistent-notification ID. Tire status 1 or 2
