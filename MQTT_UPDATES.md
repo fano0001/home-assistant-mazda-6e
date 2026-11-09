@@ -52,6 +52,20 @@ Diagnostics contain connection/fallback state, refresh intervals, report counts
 and timing per subscription. Counters reset when the connection is rebuilt.
 The integration does not keep MQTT payload histories or write research files.
 
+## Tire warning notifications
+
+Each vehicle/wheel has a stable persistent-notification ID. Tire status 1 or 2
+creates a warning in Home Assistant's notification panel. Code 2 is shown as low
+tire pressure; code 1 has a generic warning because its meaning is unresolved.
+The message includes the last reported pressure when available. English, Danish
+and German follow the HA server language; other languages use English.
+
+Both MQTT reports and reconciled full snapshots update these notifications.
+Status 0 dismisses the wheel's warning. Missing/unknown data, stale MQTT reports,
+connection errors and integration unload do not dismiss it. Pressure changes
+update the same notification; unchanged reports do not recreate it. No pressure
+threshold or phone-push service is used.
+
 ## Validation
 
 Run `python -m pytest tests -q` and

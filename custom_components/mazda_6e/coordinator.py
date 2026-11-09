@@ -13,6 +13,7 @@ from .const import DOMAIN, UPDATE_INTERVAL, FALLBACK_UPDATE_INTERVAL
 from .models import Mazda6eVehicle
 from .api import MazdaApiError
 from .mqtt import apply_status_patch, MqttStatusUpdates
+from .tire_notifications import TireNotifications
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -32,6 +33,7 @@ class Mazda6eCoordinator(DataUpdateCoordinator):
             update_interval=None,
         )
         self.api = mazda6e_api
+        self._tire_notifications = TireNotifications(hass, self.config_entry.entry_id)
         self._function_config: dict[int, set[str]] = {}
         self._last_vehicle_status: dict[int, object] = {}
         self._control_locks: dict[int, asyncio.Lock] = {}
@@ -115,6 +117,7 @@ class Mazda6eCoordinator(DataUpdateCoordinator):
             **self.data,
             vehicle_id: {**old, "status": updated_status},
         })
+        self._tire_notifications.update(vehicle_id, old["vehicle"], updated_status)
 
     def _handle_mqtt_ready(self) -> None:
         self._mqtt_ready = True
@@ -274,6 +277,8 @@ class Mazda6eCoordinator(DataUpdateCoordinator):
                     self._vehicle_ids = ids
                     self._mqtt_restart.set()
                 self._full_refresh_failed = False
+                for vehicle_id, entry in data.items():
+                    self._tire_notifications.update(vehicle_id, entry["vehicle"], entry["status"])
                 return data
             except Exception:
                 self._full_refresh_failed = True
