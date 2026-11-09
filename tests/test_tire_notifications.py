@@ -32,11 +32,14 @@ def test_warning_updates_and_clears_with_same_id(notifier, wheel):
     update(2)
     first = api.async_create.call_args
     assert "Low tire pressure" in first.kwargs["title"]
-    assert "2.16 bar" in first.args[1]
+    assert first.args[1] == "Last reported pressure: 2.16 bar."
     update(2)
     assert api.async_create.call_count == 1
     update(1, 218)
     assert "Tire warning" in api.async_create.call_args.kwargs["title"]
+    assert api.async_create.call_args.args[1] == (
+        "The vehicle reports tire warning code 1.\n\nLast reported pressure: 2.18 bar."
+    )
     assert "Low tire pressure" not in api.async_create.call_args.kwargs["title"]
     assert api.async_create.call_args.kwargs["notification_id"] == first.kwargs["notification_id"]
     for status in (None, {}, {"tire": None}, {"tire": {wheel: {"status": 3}}}):
@@ -73,7 +76,7 @@ def test_invalid_pressure_does_not_hide_warning(notifier, pressure):
     manager, api, _ = notifier
     manager.update(1, None, {"tire": {"rightFront": {"status": 2, "pressure": pressure}}})
     assert "Low tire pressure" in api.async_create.call_args.kwargs["title"]
-    assert "bar" not in api.async_create.call_args.args[1]
+    assert api.async_create.call_args.args[1] == ""
 
 
 @pytest.mark.parametrize("language,label,number", [

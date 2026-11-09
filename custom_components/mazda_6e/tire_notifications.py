@@ -60,12 +60,12 @@ class TireNotifications:
             if self._last.get(notification_id) == value:
                 continue
             title = f"{name}: {text['low'] if code == 2 else text['warning']} - {text['wheels'][index]}"
-            message = text["code"].format(code=code)
+            message = text["code"].format(code=code) if code == 1 else ""
             if pressure is not None:
                 formatted = f"{pressure / 100:.2f}"
                 if language in ("da", "de"):
                     formatted = formatted.replace(".", ",")
-                message += "\n\n" + text["pressure"].format(pressure=formatted)
+                message += ("\n\n" if message else "") + text["pressure"].format(pressure=formatted)
             persistent_notification.async_create(
                 self.hass, message, title=title, notification_id=notification_id,
             )
