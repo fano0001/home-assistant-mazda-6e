@@ -1,4 +1,4 @@
-"""Tire warning notification lifecycle, without Home Assistant services."""
+"""Tire warning notifications."""
 
 from types import ModuleType, SimpleNamespace
 from unittest.mock import Mock
