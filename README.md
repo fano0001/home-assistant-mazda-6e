@@ -33,3 +33,12 @@ The Control Passcode is required by Mazda for cloud vehicle controls. Bluetooth 
 5. Enter the Mazda account credentials and the same six-digit Control Passcode.
 
 Reconfiguration signs in again and registers the control key required for signed cloud commands. The passcode is stored in the Home Assistant config entry as an integration credential. It is encrypted before being sent to Mazda and is never exposed as a code field on the lock entity.
+
+
+# Tire status attributes
+
+Tire-pressure sensors show a readable `status`: OK for code 0, low pressure for
+code 2, and unknown otherwise. Labels follow the HA server language in English,
+Danish or German, with English as fallback. The raw value is in `status_code`.
+Automations comparing numeric codes should use `status_code`. The pressure value
+is unchanged.
