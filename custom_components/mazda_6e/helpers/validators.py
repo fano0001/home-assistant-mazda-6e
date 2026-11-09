@@ -76,7 +76,6 @@ def timestamp_ms(raw):
 
 
 def tire_warning_label(code, language="en"):
-    """Describe known tire codes without assigning a meaning to code 1."""
     labels = {
         "en": ("Low pressure", "Unknown"),
         "da": ("Lavt tryk", "Ukendt"),

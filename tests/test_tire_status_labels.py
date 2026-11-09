@@ -1,4 +1,4 @@
-"""Readable tire codes without importing the Home Assistant entry point."""
+"""Tire status labels."""
 
 import pytest
 
