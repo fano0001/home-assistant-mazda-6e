@@ -15,10 +15,10 @@ _TEXT = {
         "code": "The vehicle reports tire warning code {code}.",
     },
     "da": {
-        "wheels": ("venstre forhjul", "h?jre forhjul", "venstre baghjul", "h?jre baghjul"),
-        "low": "Lavt d?ktryk", "warning": "D?kadvarsel",
+        "wheels": ("venstre forhjul", "højre forhjul", "venstre baghjul", "højre baghjul"),
+        "low": "Lavt dæktryk", "warning": "Dækadvarsel",
         "pressure": "Senest rapporterede tryk: {pressure} bar.",
-        "code": "Bilen melder d?kadvarsel med kode {code}.",
+        "code": "Bilen melder dækadvarsel med kode {code}.",
     },
     "de": {
         "wheels": ("vorne links", "vorne rechts", "hinten links", "hinten rechts"),

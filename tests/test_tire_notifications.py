@@ -77,7 +77,7 @@ def test_invalid_pressure_does_not_hide_warning(notifier, pressure):
 
 
 @pytest.mark.parametrize("language,label,number", [
-    ("da", "Lavt d?ktryk", "2,16"),
+    ("da", "Lavt dæktryk", "2,16"),
     ("de", "Niedriger Reifendruck", "2,16"),
     ("fr", "Low tire pressure", "2.16"),
 ])
