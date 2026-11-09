@@ -1,8 +1,4 @@
-"""Allow pure-module unit tests without importing the HA entry point on Windows.
-
-The platform/flow/coordinator tests supply their own explicit HA facades. This
-does not replace a Home Assistant integration test environment.
-"""
+"""Load pure modules without importing the HA entry point."""
 
 import importlib.util
 from pathlib import Path

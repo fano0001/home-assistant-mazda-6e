@@ -50,17 +50,3 @@ does not mean the vehicle sends that field after every change.
 
 Diagnostics contain connection/fallback state, refresh intervals, report counts
 and timing per subscription. Counters reset when the connection is rebuilt.
-The integration does not keep MQTT payload histories or write research files.
-
-## Validation
-
-Run `python -m pytest tests -q` and
-`python -m compileall -q custom_components/mazda_6e`.
-Tests use synthetic values and an in-memory MQTT peer. They cover encryption,
-regional bootstrap, direct reports, shared connections, partial/stale updates,
-reconciliation, heartbeat failure, reconnect, polling settings and cleanup.
-HA-dependent tests use facades; this is not a complete Home Assistant runtime test.
-
-EU observations include driving, climate changes and AC charging. Asia has been
-reported working by the user. The unresolved codes still need field-specific
-evidence; the EU observations do not establish every code in Asia.

@@ -27,16 +27,13 @@ An unknown `batteryChargeStatus` does not fall back to the secondary field.
 | DC connector code 1 means connected | Uses the observed AC 0/1 encoding; DC-connected was not captured. Overall disconnected requires both connector states to be 0. |
 | HTTPS charging status 1 is labelled waiting | Observed with the AC connector attached and no charging current before charging began. The exact backend enum meaning is undocumented. |
 
-Code 2 matched `rfPressureWarning` and HTTPS `tire.rightFront.status` in 13
-comparisons with identical report timestamps on November 9. All four wheel
-positions use the same mapping. Code 2 is low tire pressure, confirmed by the
-vehicle warning. Code 1 passes through with its meaning unresolved.
+Tire warning code 2 means low pressure. Code 1 passes through with its meaning
+unresolved. All four wheels use the same mapping.
 
-## Mapping details that matter
+## Field conversions
 
 - `chargeCurrentVal` populates total charging current, not the separate AC-current
-  field. The AC session produced 302 equal nonzero comparisons and two differing
-  by 1 A with identical report timestamps.
+  field.
 - `totalCurrent` populates the HTTPS DC-current field. It also changes while
   unplugged and driving, so this correspondence does not establish DC connector
   charging or the physical meaning of its sign.

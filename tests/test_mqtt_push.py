@@ -1,4 +1,4 @@
-"""Persistent transport and partial MQTT state updates; no Mazda connections."""
+"""MQTT transport and state updates."""
 
 import asyncio
 import json

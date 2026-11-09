@@ -357,7 +357,7 @@ class Mazda6EApi:
 
             def cloud_device(value):
                 if isinstance(value, dict):
-                    # The verified European getConnConf exchange uses a THU
+                    # European getConnConf uses a THU
                     # device from the car's cloud function config, not the app UUID.
                     if (value.get("msgType") == "commands"
                             and value.get("serviceCode") == "THU_Service"
