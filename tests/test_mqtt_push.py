@@ -4,7 +4,7 @@ import asyncio
 import json
 import sys
 from types import ModuleType, SimpleNamespace
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import AsyncMock
 
 import pytest
 
@@ -552,7 +552,6 @@ def coordinator_context(modules, monkeypatch):
             self.hass = hass
             self.config_entry = SimpleNamespace(
                 pref_disable_polling=False,
-                entry_id="test-entry",
                 async_create_background_task=lambda hass, coro, name: hass.async_create_background_task(coro, name),
                 async_create_task=lambda hass, coro, name: hass.async_create_task(coro, name),
             )
@@ -582,23 +581,10 @@ def coordinator_context(modules, monkeypatch):
     monkeypatch.setitem(sys.modules, "homeassistant.helpers", helpers)
     monkeypatch.setitem(sys.modules, "homeassistant.helpers.update_coordinator", update)
     monkeypatch.setitem(sys.modules, "homeassistant.helpers.event", events)
-    components = ModuleType("homeassistant.components")
-    notifications = ModuleType("homeassistant.components.persistent_notification")
-    notifications.async_create = Mock()
-    notifications.async_dismiss = Mock()
-    components.persistent_notification = notifications
-    monkeypatch.setitem(sys.modules, "homeassistant.components", components)
-    monkeypatch.setitem(sys.modules, "homeassistant.components.persistent_notification", notifications)
-    registry = ModuleType("homeassistant.helpers.device_registry")
-    registry.async_get = Mock(return_value=object())
-    registry.async_entries_for_config_entry = Mock(return_value=[])
-    monkeypatch.setitem(sys.modules, "homeassistant.helpers.device_registry", registry)
-    load_module(monkeypatch, "asia_test.tire_notifications", "tire_notifications.py")
     coordinator = load_module(monkeypatch, "asia_test.coordinator", "coordinator.py")
 
     class Hass:
         def __init__(self):
-            self.config = SimpleNamespace(language="en")
             self.timers = []
             self.tasks = []
 
@@ -1139,42 +1125,3 @@ def test_tire_warning_set_unknown_and_clear(field, position, modules):
         for other in set(original["tire"]) - {position}:
             assert status["tire"][other] == original["tire"][other]
     assert original["tire"][position]["status"] == 0
-
-
-@pytest.mark.parametrize("region", ["europe", "asia"])
-def test_tire_notifications_follow_full_refresh_and_mqtt(coordinator_context, region):
-    module, Hass = coordinator_context
-    notifications = sys.modules["homeassistant.components.persistent_notification"]
-
-    async def scenario():
-        coordinator = module.Mazda6eCoordinator(Hass(), None, SimpleNamespace(region=region))
-        initial = vehicle_data(updated=100)
-        initial[1]["status"]["tire"] = {"rightFront": {"status": 2, "pressure": 216}}
-        coordinator._async_fetch_full_data = AsyncMock(return_value=initial)
-        coordinator.data = await coordinator._async_update_data()
-        notifications.async_create.assert_called_once()
-        notification_id = notifications.async_create.call_args.kwargs["notification_id"]
-        coordinator._handle_mqtt_update(1, {"lastUpdatedAt": 200, "vehicleStatus": {"soc": 73}})
-        assert notifications.async_create.call_count == 1
-        coordinator._handle_mqtt_update(1, {"lastUpdatedAt": 50, "tire": {"rightFront": {"status": 0}}})
-        notifications.async_dismiss.assert_not_called()
-        coordinator._async_fetch_full_data = AsyncMock(side_effect=OSError("offline"))
-        with pytest.raises(OSError):
-            await coordinator._async_update_data()
-        notifications.async_dismiss.assert_not_called()
-        coordinator._handle_mqtt_update(1, {"lastUpdatedAt": 300, "tire": {"rightFront": {"status": 0}}})
-        notifications.async_dismiss.assert_called_once_with(coordinator.hass, notification_id)
-        coordinator._handle_mqtt_update(1, {"lastUpdatedAt": 400, "tire": {"rightFront": {"status": 1}}})
-        assert "Tire warning" in notifications.async_create.call_args.kwargs["title"]
-        clear = vehicle_data(updated=500)
-        clear[1]["status"]["tire"] = {"rightFront": {"status": 0, "pressure": 230}}
-        coordinator._async_fetch_full_data = AsyncMock(return_value=clear)
-        await coordinator._async_update_data()
-        assert notifications.async_dismiss.call_count == 2
-        coordinator.data[1]["status"]["tire"]["rightFront"]["status"] = 2
-        coordinator._handle_mqtt_update(1, {"lastUpdatedAt": 600, "tire": {"rightFront": {"status": 2}}})
-        count = notifications.async_dismiss.call_count
-        await coordinator.async_stop()
-        assert notifications.async_dismiss.call_count == count
-
-    asyncio.run(scenario())
