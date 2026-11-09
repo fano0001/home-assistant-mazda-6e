@@ -205,7 +205,7 @@ def test_remaining_unverified_codes_do_not_replace_https_values(modules):
         "turnLndicatorLeft": 2, "turnLndicatorRight": 3,
         "driverSeatHeatStatus": 6, "passengerSeatHeatStatus": 4,
         "driverSeatAirStatus": 6, "passengerSeatAirStatus": 4,
-        "lfPressureWarning": 1, "rfPressureWarning": 2,
+        "lfPressureWarning": 3, "rfPressureWarning": 3,
         "lrPressureWarning": 3, "rrPressureWarning": 255,
         "acChargeGunConnectionState": 2, "dcDhargeGunConnectionState": 2,
         "totalCurrent": "NaN", "chargeCurrentVal": "NaN", "vehicleSpeed": 20,
@@ -1106,3 +1106,22 @@ def test_dc_connection_uses_shared_zero_one_codes(values, expected, modules):
 def test_precharge_status_has_waiting_label(modules):
     models = sys.modules["asia_test.models"]
     assert models.ChargeStatus.safe_name(1) == "waiting"
+
+
+@pytest.mark.parametrize("field,position", [
+    ("lfPressureWarning", "leftFront"), ("rfPressureWarning", "rightFront"),
+    ("lrPressureWarning", "leftBack"), ("rrPressureWarning", "rightBack"),
+])
+def test_tire_warning_set_unknown_and_clear(field, position, modules):
+    _, _, mqtt = modules
+    original = {"tire": {
+        name: {"pressure": 240, "status": 0}
+        for name in ("leftFront", "rightFront", "leftBack", "rightBack")
+    }}
+    status = original
+    for raw, expected in [(1, 1), (3, 1), (2, 2), (0, 0)]:
+        status = mqtt.apply_status_patch(status, mqtt.status_patch({field: raw}))
+        assert status["tire"][position] == {"pressure": 240, "status": expected}
+        for other in set(original["tire"]) - {position}:
+            assert status["tire"][other] == original["tire"][other]
+    assert original["tire"][position]["status"] == 0

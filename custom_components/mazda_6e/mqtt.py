@@ -650,7 +650,7 @@ def normalize_status(values: Mapping[str, Any]) -> dict[str, Any]:
         pressure = _number(values.get(field))
         tires[position] = {
             "pressure": int(pressure) if pressure is not None else None,
-            "status": _enum(values.get(warning), {0: 0}),
+            "status": _enum(values.get(warning), {0: 0, 1: 1, 2: 2}),
         }
     seats = {}
     for position, heat_field, vent_field in (

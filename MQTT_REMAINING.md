@@ -10,7 +10,7 @@ endpoint supplies them. Asia snapshots use MQTT and cannot fill parser gaps.
 | --- | --- | --- |
 | `hvac.consTempCockpit` | No MQTT mapping | Meaning and source; its existing temperature label is not established by observations |
 | Battery-preheating plan | Separate HTTPS request | No MQTT source identified |
-| Tire warnings | Raw 0 maps to normal | Nonzero warning codes |
+| Tire warnings | Raw 0/1/2 maps directly for all four wheels | Other warning codes |
 | Charging status | `batteryChargeStatus` 0/1/4 maps to HTTPS 0/6/1; without that field, `chargeStatus` 1/4 maps to 6/1 | Completed, paused and other codes |
 | Power status | Raw 0/2 maps directly | Other codes, including the single observed code 3 |
 | AC current | `BattACChrgInCurr` and its lowercase-initial alias | Nonzero evidence for the alternative `obcChrgInpAcI` source |
@@ -26,6 +26,11 @@ An unknown `batteryChargeStatus` does not fall back to the secondary field.
 | `connectStatus` 0/1 means offline/online | Repeated comparisons establish 1; 0 is inferred. Connection-only pushes do not advance vehicle telemetry timestamps. Broker loss does not set the car offline. |
 | DC connector code 1 means connected | Uses the observed AC 0/1 encoding; DC-connected was not captured. Overall disconnected requires both connector states to be 0. |
 | HTTPS charging status 1 is labelled waiting | Observed with the AC connector attached and no charging current before charging began. The exact backend enum meaning is undocumented. |
+
+Code 2 matched `rfPressureWarning` and HTTPS `tire.rightFront.status` in 13
+comparisons with identical report timestamps on November 9. All four wheel
+positions use the same mapping. Code 2 is low tire pressure, confirmed by the
+vehicle warning. Code 1 passes through with its meaning unresolved.
 
 ## Mapping details that matter
 
