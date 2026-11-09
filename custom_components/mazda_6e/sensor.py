@@ -28,7 +28,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from .const import DOMAIN
 from .entity import Mazda6eEntity
 from .entity_deduplication import control_replaces_read_only_entity
-from .helpers.validators import remaining_charge_time, speed_value, temperature, timestamp_ms
+from .helpers.validators import remaining_charge_time, speed_value, temperature, timestamp_ms, tire_warning_label
 from .models import Mazda6eVehicle, ChargeStatus, PowerStatus, SeatStatusMode, VehicleStatus
 
 _LOGGER = logging.getLogger(__name__)
@@ -81,7 +81,7 @@ def _tire_pressure(position: str) -> Mazda6eSensorDescription:
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda data, p=_TIRE_KEYS[position]: data["status"]["tire"][p]["pressure"],
         attrs_fn=lambda data, p=_TIRE_KEYS[position]: {
-            "status": data["status"]["tire"][p].get("status"),
+            "status_code": data["status"]["tire"][p].get("status"),
         },
     )
 
@@ -328,6 +328,8 @@ class Mazda6eSensor(Mazda6eEntity, SensorEntity):
 
         try:
             attributes.update(self.entity_description.attrs_fn(self.vehicle_data))
+            if "status_code" in attributes:
+                attributes["status"] = tire_warning_label(attributes["status_code"], self.hass.config.language)
         except Exception as err:
             _LOGGER.debug(
                 "Failed to compute attributes for %s: %s",

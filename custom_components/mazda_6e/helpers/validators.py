@@ -73,3 +73,15 @@ def timestamp_ms(raw):
         return None
 
     return datetime.fromtimestamp(raw / 1000, tz=timezone.utc)
+
+
+def tire_warning_label(code, language="en"):
+    labels = {
+        "en": ("Low pressure", "Unknown"),
+        "da": ("Lavt tryk", "Ukendt"),
+        "de": ("Niedriger Druck", "Unbekannt"),
+    }
+    low, unknown = labels.get(language.split("-")[0], labels["en"])
+    if isinstance(code, bool):
+        return unknown
+    return {0: "OK", 2: low}.get(code, unknown)
