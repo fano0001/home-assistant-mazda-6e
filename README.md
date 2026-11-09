@@ -33,3 +33,12 @@ The Control Passcode is required by Mazda for cloud vehicle controls. Bluetooth 
 5. Enter the Mazda account credentials and the same six-digit Control Passcode.
 
 Reconfiguration signs in again and registers the control key required for signed cloud commands. The passcode is stored in the Home Assistant config entry as an integration credential. It is encrypted before being sent to Mazda and is never exposed as a code field on the lock entity.
+
+
+# Tire warning notifications
+
+Tire status 1 or 2 creates a persistent notification for the affected wheel.
+Status 0 removes it. Missing data or connection failures do not clear a warning.
+The title uses the HA device name. Code 2 is shown as low tire pressure; code 1
+keeps its raw code because its meaning is unknown. The message includes the last
+reported pressure when available. No mobile push service is required.

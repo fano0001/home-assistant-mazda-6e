@@ -9,6 +9,7 @@ from homeassistant.exceptions import ConfigEntryAuthFailed
 from .api import Mazda6EApi
 from .const import CONF_CONTROL_PIN, DOMAIN, REGION_EUROPE, REGION_ASIA
 from .coordinator import Mazda6eCoordinator
+from .tire_notifications import async_setup_tire_notifications
 
 PLATFORMS = [
     Platform.BINARY_SENSOR,
@@ -61,6 +62,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     hass.data.setdefault(DOMAIN, {})[config_entry.entry_id] = coordinator
 
     await hass.config_entries.async_forward_entry_setups(config_entry, PLATFORMS)
+    async_setup_tire_notifications(hass, config_entry, coordinator)
 
     return True
 
