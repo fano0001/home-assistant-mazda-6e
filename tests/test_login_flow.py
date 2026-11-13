@@ -37,12 +37,17 @@ def module(monkeypatch):
     modules["homeassistant.config_entries"].ConfigFlow = Flow
     modules["homeassistant.const"].CONF_EMAIL = "email"
     modules["homeassistant.const"].CONF_PASSWORD = "password"
+    modules["homeassistant.const"].CONF_REGION = "region"
     modules["homeassistant.helpers.aiohttp_client"].async_get_clientsession = lambda hass: None
     modules["login_test.const"].DOMAIN = "mazda_6e"
     modules["login_test.const"].CONF_CONTROL_PIN = "control_pin"
+    modules["login_test.const"].REGION_EUROPE = "europe"
+    modules["login_test.const"].REGION_ASIA = "asia"
     modules["homeassistant.helpers.selector"].TextSelector = lambda config: str
     modules["homeassistant.helpers.selector"].TextSelectorConfig = lambda **kwargs: kwargs
     modules["homeassistant.helpers.selector"].TextSelectorType = SimpleNamespace(PASSWORD="password")
+    modules["homeassistant.helpers.selector"].SelectSelector = lambda config: str
+    modules["homeassistant.helpers.selector"].SelectSelectorConfig = lambda **kwargs: kwargs
     api = SimpleNamespace(refresh="synthetic-refresh", login_email_password=AsyncMock(return_value={
         "token": "synthetic-token", "refreshToken": "synthetic-refresh", "emailVerify": True,
     }), send_device_login=AsyncMock(), verify_device_code=AsyncMock())
@@ -69,8 +74,8 @@ def test_plaintext_login_verification_and_unique_identity(module):
     mod, api = module
     async def run():
         flow = new_flow(mod)
-        assert set(mod.STEP1_SCHEMA.schema) == {"email", "password", "control_pin"}
-        result = await flow.async_step_user({"email": "test@example.invalid", "password": "secret"})
+        assert set(mod.STEP1_SCHEMA.schema) == {"email", "password", "control_pin", "region"}
+        result = await flow.async_step_user({"email": "test@example.invalid", "password": "secret", "region": "europe"})
         assert result["step_id"] == "verify"
         args = api.login_email_password.call_args.args
         assert args[0] != "test@example.invalid" and args[1] != "secret"
@@ -81,7 +86,7 @@ def test_plaintext_login_verification_and_unique_identity(module):
         result = await flow.async_step_verify({"verification_code": "123456"})
         assert result["type"] == "create_entry"
         assert set(result["data"]) == {
-            "token", "refresh", "email_enc", "deviceid", "control_private_key", "control_pin",
+            "token", "refresh", "email_enc", "deviceid", "control_private_key", "control_pin", "region",
         }
         assert result["data"]["control_pin"] is None
         private = serialization.load_der_private_key(

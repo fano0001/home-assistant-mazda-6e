@@ -201,6 +201,7 @@
           "charging": "Lädt",
           "completed": "Abgeschlossen",
           "not_charging": "Läd nicht",
+          "waiting": "Wartet auf Ladebeginn",
           "paused": "Pausiert",
           "unknown": "Unbekannt"
         }

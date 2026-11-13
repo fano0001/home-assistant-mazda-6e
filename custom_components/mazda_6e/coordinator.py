@@ -1,19 +1,25 @@
 import logging
 import asyncio
+from contextlib import suppress
+from time import monotonic
 
 from datetime import timedelta
 from collections.abc import Callable
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.helpers.event import async_track_time_interval
 
-from .const import DOMAIN, UPDATE_INTERVAL
+from .const import DOMAIN, UPDATE_INTERVAL, FALLBACK_UPDATE_INTERVAL
 from .models import Mazda6eVehicle
 from .api import MazdaApiError
+from .mqtt import apply_status_patch, MqttStatusUpdates
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class Mazda6eCoordinator(DataUpdateCoordinator):
+    RECONNECT_INITIAL_DELAY = 5
+
     def __init__(self, hass, config_entry, mazda6e_api):
         """Initialize my coordinator."""
         super().__init__(
@@ -21,12 +27,168 @@ class Mazda6eCoordinator(DataUpdateCoordinator):
             logger=_LOGGER,
             name=DOMAIN,
             config_entry=config_entry,
-            update_interval=timedelta(seconds=UPDATE_INTERVAL),
+            # Push updates reset the coordinator's built-in polling timer.
+            # Independent timers below guarantee a full refresh every 15 min.
+            update_interval=None,
         )
         self.api = mazda6e_api
         self._function_config: dict[int, set[str]] = {}
         self._last_vehicle_status: dict[int, object] = {}
         self._control_locks: dict[int, asyncio.Lock] = {}
+        self._mqtt_task = None
+        self._catchup_task = None
+        self._mqtt_ready = False
+        self._stopping = False
+        self._unsub_timers = []
+        self._scheduled_refresh_tasks = set()
+        self._refresh_lock = asyncio.Lock()
+        self._full_refresh_updates = None
+        self._mqtt_status_updates = {}
+        self._mqtt_restart = asyncio.Event()
+        self._vehicle_ids = set()
+        self._full_refresh_failed = False
+        self._mqtt_reports_received = 0
+        self._last_mqtt_report = None
+
+    @property
+    def mqtt_diagnostics(self) -> dict:
+        last = self._last_mqtt_report
+        return {
+            "connected": self._mqtt_ready,
+            "reports_received": self._mqtt_reports_received,
+            "seconds_since_report": None if last is None else round(monotonic() - last, 1),
+            "full_refresh_interval_seconds": UPDATE_INTERVAL,
+            "fallback_interval_seconds": FALLBACK_UPDATE_INTERVAL,
+            "polling_enabled": not self.config_entry.pref_disable_polling,
+            "fallback_active": not self.config_entry.pref_disable_polling and (
+                not self._mqtt_ready or self._full_refresh_failed
+            ),
+        }
+
+    def async_start(self) -> None:
+        """Start push subscriptions and independent reconciliation timers."""
+        self._mqtt_restart.clear()
+        self._unsub_timers = [
+            async_track_time_interval(
+                self.hass, self._async_periodic_refresh, timedelta(seconds=UPDATE_INTERVAL),
+            ),
+            async_track_time_interval(
+                self.hass, self._async_fallback_refresh, timedelta(seconds=FALLBACK_UPDATE_INTERVAL),
+            ),
+        ]
+        self._mqtt_task = self.config_entry.async_create_background_task(
+            self.hass, self._async_mqtt_loop(), "Mazda MQTT updates",
+        )
+
+    async def _async_periodic_refresh(self, _now) -> None:
+        if not self._stopping and not self.config_entry.pref_disable_polling:
+            await self._async_scheduled_refresh()
+
+    async def _async_fallback_refresh(self, _now) -> None:
+        if (not self._stopping and not self.config_entry.pref_disable_polling
+                and (not self._mqtt_ready or self._full_refresh_failed)):
+            await self._async_scheduled_refresh()
+
+    async def _async_scheduled_refresh(self) -> None:
+        task = asyncio.current_task()
+        self._scheduled_refresh_tasks.add(task)
+        try:
+            await self.async_request_refresh()
+        finally:
+            self._scheduled_refresh_tasks.discard(task)
+
+    def _handle_mqtt_update(self, vehicle_id, patch: dict) -> None:
+        """Merge a partial MQTT state directly; no HTTP request per report."""
+        if self._stopping or not self.data or vehicle_id not in self.data:
+            return
+        self._mqtt_reports_received += 1
+        self._last_mqtt_report = monotonic()
+        old = self.data[vehicle_id]
+        current_status = old.get("status") or {}
+        updated_status = apply_status_patch(current_status, patch)
+        # Rejected stale reports must not become candidates for later refreshes.
+        if updated_status != current_status:
+            self._mqtt_status_updates.setdefault(vehicle_id, MqttStatusUpdates()).record(patch)
+        if self._full_refresh_updates is not None:
+            self._full_refresh_updates.setdefault(vehicle_id, []).append(patch)
+        self.async_set_updated_data({
+            **self.data,
+            vehicle_id: {**old, "status": updated_status},
+        })
+
+    def _handle_mqtt_ready(self) -> None:
+        self._mqtt_ready = True
+        _LOGGER.info("Mazda MQTT notifications connected")
+        # Reconcile changes missed while offline using the now-open session.
+        if (not self.config_entry.pref_disable_polling
+                and (self._catchup_task is None or self._catchup_task.done())):
+            self._catchup_task = self.config_entry.async_create_task(
+                self.hass, self.async_request_refresh(), "Mazda MQTT reconnect refresh",
+            )
+
+    async def _async_mqtt_loop(self) -> None:
+        delay = self.RECONNECT_INITIAL_DELAY
+        while not self._stopping:
+            started = asyncio.get_running_loop().time()
+            self._mqtt_restart.clear()
+            listener = asyncio.create_task(self.api.async_listen_updates(
+                tuple(self._vehicle_ids), self._handle_mqtt_update, self._handle_mqtt_ready,
+            ))
+            changed = asyncio.create_task(self._mqtt_restart.wait())
+            try:
+                done, _ = await asyncio.wait({listener, changed}, return_when=asyncio.FIRST_COMPLETED)
+                if changed in done:
+                    delay = self.RECONNECT_INITIAL_DELAY
+                    continue
+                await listener
+            except asyncio.CancelledError:
+                raise
+            except ConfigEntryAuthFailed:
+                # Let the coordinator's regular error handling start reauth.
+                _LOGGER.warning("Mazda MQTT authentication failed; using polling")
+            except Exception as err:
+                # Do not expose broker payloads, credentials or vehicle IDs.
+                reason = err.code if isinstance(err, MazdaApiError) and err.code else type(err).__name__
+                _LOGGER.warning("Mazda MQTT unavailable (%s); using polling", reason)
+            finally:
+                self._mqtt_ready = False
+                for task in (listener, changed):
+                    task.cancel()
+                for task in (listener, changed):
+                    with suppress(asyncio.CancelledError, Exception):
+                        await task
+            if asyncio.get_running_loop().time() - started >= 60:
+                delay = self.RECONNECT_INITIAL_DELAY
+            await asyncio.sleep(delay)
+            delay = min(delay * 2, 300)
+
+    async def async_stop(self) -> None:
+        """Remove timers and await all listener/transport cleanup on unload."""
+        self._stopping = True
+        for unsub in self._unsub_timers:
+            unsub()
+        self._unsub_timers.clear()
+        scheduled = list(self._scheduled_refresh_tasks)
+        for task in scheduled:
+            task.cancel()
+        for task in scheduled:
+            with suppress(asyncio.CancelledError):
+                await task
+        if self._catchup_task is not None:
+            self._catchup_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await self._catchup_task
+            self._catchup_task = None
+        if self._mqtt_task is not None:
+            self._mqtt_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await self._mqtt_task
+            self._mqtt_task = None
+
+    async def async_shutdown(self) -> None:
+        """Also stop custom timers/transports when HA shuts down the entry."""
+        await self.async_stop()
+        await super().async_shutdown()
 
     def _get_control_lock(self, vehicle_id: int) -> asyncio.Lock:
         lock = self._control_locks.get(vehicle_id)
@@ -90,6 +252,36 @@ class Mazda6eCoordinator(DataUpdateCoordinator):
         return self._function_config[vehicle_id]
 
     async def _async_update_data(self):
+        async with self._refresh_lock:
+            self._full_refresh_updates = {}
+            try:
+                data = await self._async_fetch_full_data()
+                # Reports received while HTTP/MQTT snapshots were in flight
+                # must survive the older full response arriving afterwards.
+                for vehicle_id, entry in data.items():
+                    snapshot = entry["status"] or {}
+                    current = snapshot
+                    for patch in self._full_refresh_updates.get(vehicle_id, []):
+                        current = apply_status_patch(current, patch)
+                    updates = self._mqtt_status_updates.get(vehicle_id)
+                    entry["status"] = updates.reconcile(snapshot, current=current) if updates else current
+                self._mqtt_status_updates = {
+                    vehicle_id: updates for vehicle_id, updates in self._mqtt_status_updates.items()
+                    if vehicle_id in data
+                }
+                ids = set(data)
+                if ids != self._vehicle_ids:
+                    self._vehicle_ids = ids
+                    self._mqtt_restart.set()
+                self._full_refresh_failed = False
+                return data
+            except Exception:
+                self._full_refresh_failed = True
+                raise
+            finally:
+                self._full_refresh_updates = None
+
+    async def _async_fetch_full_data(self):
         """Fetch data from API"""
 
         # get vehicles
