@@ -3,6 +3,7 @@
   "name": "Mazda 6e",
   "codeowners": [],
   "config_flow": true,
+  "dependencies": ["persistent_notification"],
   "documentation": "https://github.com/fano0001/home-assistant-mazda-6e",
   "iot_class": "cloud_push",
   "issue_tracker": "https://github.com/fano0001/home-assistant-mazda-6e/issues",
