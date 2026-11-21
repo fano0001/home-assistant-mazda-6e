@@ -16,6 +16,18 @@ from homeassistant.exceptions import ConfigEntryAuthFailed
 
 _LOGGER = logging.getLogger(__name__)
 
+ASIA_FUNCTION_CODES = {
+    "#acControl": "ACSW",
+    "#frontDefrost": "ACFrontDefrosterSW",
+    "#steeringWheelHeat": "SteeringWheelSW",
+    "#flashingAndHonking": "FlashHonk",
+    "#windowControl": "WindowSW",
+    "#driverSeatHeat": "DriverSeatHeaterSW",
+    "#passengerSeatHeat": "FronSeatHeaterSW",
+    "#driverSeatVent": "DriverSeatVentilatorSW",
+    "#passengerSeatVent": "FronSeatVentilationSW",
+}
+
 HEADERS_BASE = {
     "content-type": "application/json",
     "devicetype": "iPhone",
@@ -268,7 +280,7 @@ class Mazda6EApi:
                         collect(child)
 
             collect(raw.get("data"))
-            return codes
+            return codes | {alias for code, alias in ASIA_FUNCTION_CODES.items() if code in codes}
 
         url = f"{base_url(self.region)}/cma-app-user/api/vehicle/function-config"
         headers = {
