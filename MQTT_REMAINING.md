@@ -11,11 +11,12 @@ endpoint supplies them. Asia snapshots use MQTT and cannot fill parser gaps.
 | `hvac.consTempCockpit` | No MQTT mapping | Meaning and source; its existing temperature label is not established by observations |
 | Battery-preheating plan | Separate HTTPS request | No MQTT source identified |
 | Tire warnings | Raw 0/1/2 maps directly for all four wheels | Other warning codes |
-| Charging status | `batteryChargeStatus` 0/1/4 maps to HTTPS 0/6/1; without that field, `chargeStatus` 1/4 maps to 6/1 | Completed, paused and other codes |
+| Charging status | `batteryChargeStatus` 0/1/2/3/4 maps to HTTPS 0/6/4/7/1. Without that field, only `chargeStatus=1` maps to 6 | Other codes |
 | Power status | Raw 0/2 maps directly | Other codes, including the single observed code 3 |
 | AC current | `BattACChrgInCurr` and its lowercase-initial alias | Nonzero evidence for the alternative `obcChrgInpAcI` source |
 
-Raw `chargeStatus=3` is not translated: it corresponded to both HTTPS 0 and 1.
+Raw `chargeStatus=3` matched both HTTPS 0 and 1. Raw `chargeStatus=4` matched
+waiting, completed and paused. Both leave the previous status in place.
 An unknown `batteryChargeStatus` does not fall back to the secondary field.
 
 ## Enabled interpretations needing confirmation
