@@ -981,9 +981,10 @@ def test_unknown_high_beam_code_preserves_previous_state(value, modules):
 @pytest.mark.parametrize("values,expected", [
     ({"batteryChargeStatus": 0, "chargeStatus": 1}, 0),
     ({"batteryChargeStatus": 1, "chargeStatus": 3}, 6),
+    ({"batteryChargeStatus": 2, "chargeStatus": 4}, 4),
+    ({"batteryChargeStatus": 3, "chargeStatus": 4}, 7),
     ({"batteryChargeStatus": 4, "chargeStatus": 3}, 1),
     ({"chargeStatus": 1}, 6),
-    ({"chargeStatus": 4}, 1),
     ({"batteryChargeStatus": "1"}, 6),
 ])
 def test_charging_status_translation(values, expected, modules):
@@ -993,13 +994,13 @@ def test_charging_status_translation(values, expected, modules):
 
 
 @pytest.mark.parametrize("values", [
-    {"chargeStatus": 3}, {"chargeStatus": 2},
+    {"chargeStatus": 2}, {"chargeStatus": 3}, {"chargeStatus": 4},
     {"batteryChargeStatus": 9, "chargeStatus": 1},
     {"batteryChargeStatus": True},
 ])
 def test_unresolved_charging_status_preserves_previous_state(values, modules):
     _, _, mqtt = modules
-    original = {"charge": {"chargeStatus": 1}}
+    original = {"charge": {"chargeStatus": 7}}
     patch = mqtt.status_patch(values)
     assert patch == {}
     assert mqtt.apply_status_patch(original, patch) == original

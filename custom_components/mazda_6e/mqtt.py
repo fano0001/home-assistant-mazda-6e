@@ -673,9 +673,9 @@ def normalize_status(values: Mapping[str, Any]) -> dict[str, Any]:
             "ventStatus": vent,
             "mode": mode,
         }
-    charge_status = _enum(values.get("batteryChargeStatus"), {0: 0, 1: 6, 4: 1})
+    charge_status = _enum(values.get("batteryChargeStatus"), {0: 0, 1: 6, 2: 4, 3: 7, 4: 1})
     if values.get("batteryChargeStatus") is None:
-        charge_status = _enum(values.get("chargeStatus"), {1: 6, 4: 1})
+        charge_status = _enum(values.get("chargeStatus"), {1: 6})
     ac_plug = _enum(values.get("acChargeGunConnectionState"), {0: 0, 1: 1})
     dc_plug = _enum(values.get("dcDhargeGunConnectionState"), {0: 0, 1: 1})
     return {
