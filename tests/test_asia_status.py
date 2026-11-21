@@ -237,12 +237,38 @@ def test_asia_uses_ca_function_config(modules):
     )
     client._request = AsyncMock(return_value={"success": True, "data": [{
         "applicationFuncCode": "root",
-        "children": [{"applicationFuncCode": "ACSW", "serviceCode": "air"}],
+        "children": [
+            {"applicationFuncCode": "#acControl", "serviceCode": "AC_Service"},
+            {"applicationFuncCode": "#frontDefrost"},
+            {"applicationFuncCode": "#steeringWheelHeat"},
+            {"applicationFuncCode": "#flashingAndHonking"},
+            {"applicationFuncCode": "#windowControl"},
+            {"applicationFuncCode": "#driverSeatHeat"},
+            {"applicationFuncCode": "#passengerSeatHeat"},
+            {"applicationFuncCode": "#driverSeatVent"},
+            {"applicationFuncCode": "#passengerSeatVent"},
+            {"applicationFuncCode": "#batteryScheduleHeating"},
+        ],
     }]})
     result = asyncio.run(client.async_get_function_config("car-id"))
-    assert result == {"root", "ACSW", "air"}
+    assert {
+        "ACSW", "ACFrontDefrosterSW", "SteeringWheelSW", "FlashHonk", "WindowSW",
+        "DriverSeatHeaterSW", "FronSeatHeaterSW", "DriverSeatVentilatorSW",
+        "FronSeatVentilationSW",
+    } <= result
+    assert {"#acControl", "#batteryScheduleHeating", "AC_Service"} <= result
+    assert "BatteryMaxSoc" not in result
     assert client._request.await_args.args[0].endswith("/api/device/appGetCarConfFunc")
     assert client._request.await_args.args[2] == {"carId": "car-id"}
+
+
+def test_europe_keeps_original_function_codes(modules):
+    api_module, const, _ = modules
+    client = api_module.Mazda6EApi(None, token="token", deviceid="device", region=const.REGION_EUROPE)
+    codes = ["ACSW", "WindowSlightlyDown", "#driverSeatHeat"]
+    client._request = AsyncMock(return_value={"data": {"confList": codes}})
+
+    assert asyncio.run(client.async_get_function_config(1)) == set(codes)
 
 
 def test_refresh_updates_persisted_token_pair(modules):
